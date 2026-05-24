@@ -1,6 +1,5 @@
 {
   "version": 2,
   "framework": "nextjs",
-  "installCommand": "cd ../.. && npm install --ignore-scripts",
   "buildCommand": "cd ../.. && npx turbo run build --filter=@interviewmirror/frontend"
 }
