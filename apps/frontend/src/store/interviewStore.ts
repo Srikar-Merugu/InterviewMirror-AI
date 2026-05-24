@@ -66,7 +66,7 @@ export const useInterviewStore = create<InterviewState>()(
             (window.location.port === "3000" ||
              window.location.hostname === "localhost" ||
              window.location.hostname === "127.0.0.1");
-          const backendUrl = isDev ? `http://${window.location.hostname}:5001` : "";
+          const backendUrl = process.env.NEXT_PUBLIC_API_URL || (isDev ? `http://${window.location.hostname}:5001` : "");
 
           // Initialize Socket.IO connection
           const socket = io(backendUrl, {

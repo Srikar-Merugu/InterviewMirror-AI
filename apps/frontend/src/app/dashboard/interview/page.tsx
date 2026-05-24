@@ -820,7 +820,7 @@ export default function InterviewSimulatorPage() {
         (window.location.port === "3000" ||
          window.location.hostname === "localhost" ||
          window.location.hostname === "127.0.0.1");
-      const apiBase = isDev ? `http://${window.location.hostname}:5001` : "";
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || (isDev ? `http://${window.location.hostname}:5001` : "");
 
       const payload = {
         title: `${targetRole}`,

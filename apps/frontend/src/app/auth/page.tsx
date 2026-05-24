@@ -53,7 +53,7 @@ export default function AuthPage() {
         (window.location.port === "3000" ||
          window.location.hostname === "localhost" ||
          window.location.hostname === "127.0.0.1");
-      const apiBase = isDev ? `http://${window.location.hostname}:5001` : "";
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || (isDev ? `http://${window.location.hostname}:5001` : "");
 
       let endpoint = "";
       if (authMode === "signin") {
@@ -348,7 +348,7 @@ export default function AuthPage() {
                     (window.location.port === "3000" ||
                      window.location.hostname === "localhost" ||
                      window.location.hostname === "127.0.0.1");
-                  const apiBase = isDev ? `http://${window.location.hostname}:5001` : "";
+                  const apiBase = process.env.NEXT_PUBLIC_API_URL || (isDev ? `http://${window.location.hostname}:5001` : "");
                   const response = await fetch(`${apiBase}/api/v1/auth/oauth`, {
                     method: "POST",
                     headers: {
@@ -401,7 +401,7 @@ export default function AuthPage() {
                     (window.location.port === "3000" ||
                      window.location.hostname === "localhost" ||
                      window.location.hostname === "127.0.0.1");
-                  const apiBase = isDev ? `http://${window.location.hostname}:5001` : "";
+                  const apiBase = process.env.NEXT_PUBLIC_API_URL || (isDev ? `http://${window.location.hostname}:5001` : "");
                   const response = await fetch(`${apiBase}/api/v1/auth/oauth`, {
                     method: "POST",
                     headers: {
