@@ -1,22 +1,16 @@
 {
   "version": 2,
+  "buildCommand": "npm install && npx prisma generate --schema=packages/database/prisma/schema.prisma && npm run bundle --workspace=apps/backend",
   "builds": [
     {
-      "src": "apps/backend/src/index.ts",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": [
-          "packages/**",
-          "node_modules/.prisma/**",
-          "node_modules/@prisma/client/**"
-        ]
-      }
+      "src": "apps/backend/dist/bundle.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "apps/backend/src/index.ts"
+      "dest": "apps/backend/dist/bundle.js"
     }
   ]
 }
