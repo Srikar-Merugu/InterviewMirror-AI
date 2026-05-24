@@ -9,6 +9,14 @@ import { authRouter } from "./routes/auth.route";
 
 const app = express();
 
+// Trust proxy for Vercel deployments and rate limiting
+app.set("trust proxy", 1);
+
+// Root path to prevent 404s for simple pings
+app.get("/", (req, res) => {
+  res.status(200).send("InterviewMirror AI API is running.");
+});
+
 // Security Headers Setup
 app.use(helmet());
 
