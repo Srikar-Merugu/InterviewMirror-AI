@@ -1,0 +1,210 @@
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  USER
+  RECRUITER
+  ADMIN
+}
+
+enum SessionStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum SubscriptionTier {
+  FREE
+  PRO
+  ENTERPRISE
+}
+
+model User {
+  id                    String            @id @default(auto()) @map("_id") @db.ObjectId
+  email                 String            @unique
+  name                  String?
+  role                  Role              @default(USER)
+  passwordHash          String?           // Hashed credentials
+  provider              String            @default("credentials") // "credentials", "google", "github"
+  providerId            String?            // Third-party login profile ID
+  avatarUrl             String?
+  emailVerified         Boolean           @default(false)
+  emailVerificationToken String?
+  resetPasswordToken    String?
+  resetPasswordExpires  DateTime?
+  failedLoginAttempts   Int               @default(0)
+  lockoutUntil          DateTime?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  sessions              InterviewSession[]
+  subscription          Subscription?
+  notifications         Notification[]
+  analytics             Analytics?
+  userSessions          UserSession[]
+  refreshTokens         RefreshToken[]
+  auditLogs             AuditLog[]
+}
+
+model Subscription {
+  id                   String           @id @default(auto()) @map("_id") @db.ObjectId
+  userId               String           @unique @db.ObjectId
+  user                 User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tier                 SubscriptionTier @default(FREE)
+  stripeCustomerId     String?          @unique
+  stripeSubscriptionId String?          @unique
+  currentPeriodEnd     DateTime?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+}
+
+model InterviewSession {
+  id             String          @id @default(auto()) @map("_id") @db.ObjectId
+  userId         String          @db.ObjectId
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title          String
+  jobDescription String?
+  videoUrl       String?
+  audioUrl       String?
+  status         SessionStatus   @default(PENDING)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  aiReport       AIReport?
+  postureLogs    PostureLog[]
+  facialLogs     FacialLog[]
+  speechLogs     SpeechLog[]
+  recruiterReport RecruiterReport?
+
+  @@index([userId])
+  @@index([status])
+}
+
+model AIReport {
+  id                 String           @id @default(auto()) @map("_id") @db.ObjectId
+  sessionId          String           @unique @db.ObjectId
+  session            InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  overallScore       Float
+  communicationScore Float
+  technicalScore     Float
+  overallFeedback    String
+  recommendations    String[]
+  createdAt          DateTime         @default(now())
+}
+
+model PostureLog {
+  id                  String           @id @default(auto()) @map("_id") @db.ObjectId
+  sessionId           String           @db.ObjectId
+  session             InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  timestampSeconds    Float
+  headTiltAngle       Float
+  shoulderSlopeAngle  Float
+  isSlumping          Boolean
+  confidenceScore     Float
+  createdAt           DateTime         @default(now())
+
+  @@index([sessionId])
+}
+
+model FacialLog {
+  id               String           @id @default(auto()) @map("_id") @db.ObjectId
+  sessionId        String           @db.ObjectId
+  session          InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  timestampSeconds Float
+  eyeContactScore  Float
+  smileIntensity   Float
+  primaryEmotion   String
+  blinkingRate     Float
+  createdAt        DateTime         @default(now())
+
+  @@index([sessionId])
+}
+
+model SpeechLog {
+  id               String           @id @default(auto()) @map("_id") @db.ObjectId
+  sessionId        String           @db.ObjectId
+  session          InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  transcription    String
+  speechRateWPM    Float
+  fillerWords      Json
+  overallConfidence Float
+  createdAt        DateTime         @default(now())
+
+  @@index([sessionId])
+}
+
+model Analytics {
+  id                  String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId              String   @unique @db.ObjectId
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  aggregateScore      Float    @default(0.0)
+  totalInterviews     Int      @default(0)
+  averageEyeContact   Float    @default(0.0)
+  averagePostureScore Float    @default(0.0)
+  lastUpdated         DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message   String
+  type      String   @default("INFO")
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([isRead])
+}
+
+model RecruiterReport {
+  id             String           @id @default(auto()) @map("_id") @db.ObjectId
+  sessionId      String           @unique @db.ObjectId
+  session        InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  shareableToken String           @unique @default(uuid())
+  recruiterNotes String?
+  isPublic       Boolean          @default(false)
+  createdAt      DateTime         @default(now())
+}
+
+model UserSession {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  userAgent String?
+  ipAddress String?
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model RefreshToken {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  isRevoked Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model AuditLog {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action    String
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}

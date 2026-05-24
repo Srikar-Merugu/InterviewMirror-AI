@@ -1,0 +1,62 @@
+name: InterviewMirror AI - CI Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  validate-monorepo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js v22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Setup Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Node Workspace Dependencies
+        run: npm ci
+
+      - name: Validate Prisma Schema
+        run: npx prisma validate --schema=./packages/database/prisma/schema.prisma
+
+      - name: Generate Prisma Client
+        run: npm run build --workspace=@interviewmirror/database
+
+      - name: Run ESLint & Formatting Checks
+        run: npm run lint
+
+      - name: Compile and Build All Packages/Apps
+        run: npm run build
+
+  validate-ai-engine:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Python dependencies
+        run: |
+          cd apps/ai-engine
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Syntax Check AI Engine
+        run: |
+          cd apps/ai-engine
+          python -m py_compile main.py services/*.py routes/*.py

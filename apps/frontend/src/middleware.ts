@@ -1,0 +1,63 @@
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  const accessToken = request.cookies.get("access_token")?.value;
+  const refreshToken = request.cookies.get("refresh_token")?.value;
+
+  const isDashboardRoute = pathname.startsWith("/dashboard");
+  const isAuthRoute = pathname.startsWith("/auth");
+
+  // Decodes JWT payload and checks expiration
+  const isTokenExpired = (token: string): boolean => {
+    try {
+      const payloadPart = token.split(".")[1];
+      if (!payloadPart) return true;
+
+      // Handle Base64Url padding
+      const base64 = payloadPart.replace(/-/g, "+").replace(/_/g, "/");
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split("")
+          .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+          .join(""),
+      );
+
+      const payload = JSON.parse(jsonPayload);
+      if (!payload.exp) return false;
+      return Date.now() >= payload.exp * 1000;
+    } catch {
+      return true;
+    }
+  };
+
+  // Route protection rules
+  if (isDashboardRoute) {
+    if (!accessToken && !refreshToken) {
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = "/auth";
+      return NextResponse.redirect(redirectUrl);
+    }
+
+    if (accessToken && isTokenExpired(accessToken) && !refreshToken) {
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = "/auth";
+      return NextResponse.redirect(redirectUrl);
+    }
+  }
+
+  if (isAuthRoute) {
+    if (accessToken && !isTokenExpired(accessToken)) {
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = "/dashboard/home";
+      return NextResponse.redirect(redirectUrl);
+    }
+  }
+
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: ["/dashboard/:path*", "/auth"],
+};

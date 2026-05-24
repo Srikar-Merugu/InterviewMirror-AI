@@ -1,0 +1,18 @@
+{
+  "name": "@interviewmirror/logger",
+  "version": "1.0.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "winston": "^3.13.0"
+  },
+  "devDependencies": {
+    "@interviewmirror/configs": "*",
+    "@types/node": "^20.12.12",
+    "typescript": "^5.4.5"
+  }
+}

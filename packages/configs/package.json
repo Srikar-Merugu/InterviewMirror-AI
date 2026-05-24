@@ -1,0 +1,9 @@
+{
+  "name": "@interviewmirror/configs",
+  "version": "1.0.0",
+  "private": true,
+  "main": "eslint-preset.js",
+  "dependencies": {
+    "typescript": "^5.4.5"
+  }
+}

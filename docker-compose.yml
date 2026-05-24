@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  # Database container
+  postgres:
+    image: postgres:15-alpine
+    container_name: interviewmirror-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: interviewmirror_admin
+      POSTGRES_PASSWORD: interviewmirror_secure_pass_123
+      POSTGRES_DB: interviewmirror_core
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U interviewmirror_admin -d interviewmirror_core"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Express.js REST API server
+  backend:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+    container_name: interviewmirror-backend
+    restart: always
+    ports:
+      - "5001:5001"
+    environment:
+      PORT: 5001
+      NODE_ENV: development
+      DATABASE_URL: postgresql://interviewmirror_admin:interviewmirror_secure_pass_123@postgres:5432/interviewmirror_core?schema=public
+      JWT_SECRET: clerk_jwt_secret_token_key_mirror
+      AI_ENGINE_URL: http://ai-engine:8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # FastAPI CV / Audio processing engine
+  ai-engine:
+    build:
+      context: ./apps/ai-engine
+      dockerfile: Dockerfile
+    container_name: interviewmirror-ai-engine
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      PORT: 8000
+      NODE_ENV: development
+
+  # Next.js Web dashboard frontend
+  frontend:
+    build:
+      context: .
+      dockerfile: apps/frontend/Dockerfile
+    container_name: interviewmirror-frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: http://localhost:5001/api/v1
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
