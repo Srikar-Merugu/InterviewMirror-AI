@@ -11,6 +11,9 @@ out/
 dist/
 build/
 
+# Allow pre-built Vercel serverless bundle
+!api/index.js
+
 # Turborepo & build cache
 .turbo/
 .cache/

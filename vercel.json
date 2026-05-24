@@ -1,27 +1,15 @@
 {
   "version": 2,
-  "installCommand": "npm install",
-  "buildCommand": "npx prisma generate --schema=packages/database/prisma/schema.prisma",
   "builds": [
     {
-      "src": "api/index.ts",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": [
-          "apps/backend/src/**",
-          "packages/database/src/**",
-          "packages/database/prisma/**",
-          "packages/logger/src/**",
-          "packages/shared-types/src/**",
-          "node_modules/.prisma/**"
-        ]
-      }
+      "src": "api/index.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "api/index.ts"
+      "dest": "api/index.js"
     }
   ]
 }
