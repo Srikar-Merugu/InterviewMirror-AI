@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { motion } from "framer-motion";
+import { FeatureLock } from "@/components/FeatureLock";
 import {
   Sparkles,
   ShieldCheck,
@@ -418,6 +419,7 @@ export default function ReportDetailPage() {
   const improvementPlan = buildImprovementPlan(report);
 
   return (
+    <FeatureLock featureKey="reports">
     <div className="space-y-6 relative overflow-hidden">
       {/* Upper navigation header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 no-print">
@@ -697,5 +699,6 @@ export default function ReportDetailPage() {
         </div>
       </div>
     </div>
+    </FeatureLock>
   );
 }

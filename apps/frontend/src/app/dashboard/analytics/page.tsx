@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { FeatureLock } from "@/components/FeatureLock";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   AreaChart,
@@ -181,6 +182,7 @@ export default function AnalyticsDashboard() {
   );
 
   return (
+    <FeatureLock featureKey="analytics">
     <div className="space-y-6">
       {/* Header controls */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -596,6 +598,7 @@ export default function AnalyticsDashboard() {
         </motion.div>
       </div>
     </div>
+    </FeatureLock>
   );
 }
 

@@ -3,6 +3,7 @@ import { prisma } from "@interviewmirror/database";
 import { AuthenticatedRequest } from "../middlewares/auth.middleware";
 import { BadRequestError, NotFoundError } from "../middlewares/error.middleware";
 import { logger } from "@interviewmirror/logger";
+import { generateAccessToken, generateRefreshToken, setAuthCookies } from "../utils/auth";
 import Stripe from "stripe";
 
 const stripeKey = process.env.STRIPE_SECRET_KEY || "";
@@ -121,6 +122,7 @@ export class StripeController {
           stripeCustomerId: `sub_mock_customer_${dbUser.id.slice(0, 8)}`,
           stripeSubscriptionId: `sub_mock_subscription_${dbUser.id.slice(0, 8)}`,
           currentPeriodEnd,
+          lastResetAt: new Date(),
         },
         create: {
           userId: dbUser.id,
@@ -128,6 +130,24 @@ export class StripeController {
           stripeCustomerId: `sub_mock_customer_${dbUser.id.slice(0, 8)}`,
           stripeSubscriptionId: `sub_mock_subscription_${dbUser.id.slice(0, 8)}`,
           currentPeriodEnd,
+          lastResetAt: new Date(),
+        },
+      });
+
+      // Log billing history
+      const priceMap: Record<string, number> = {
+        FREE: 0,
+        PRO: 19,
+        ENTERPRISE: 49,
+      };
+
+      await prisma.billingHistory.create({
+        data: {
+          userId: dbUser.id,
+          amount: priceMap[tier] || 0,
+          tier: tier as any,
+          stripeInvoiceId: `inv_mock_${dbUser.id.slice(0, 8)}`,
+          status: "PAID",
         },
       });
 
@@ -141,9 +161,27 @@ export class StripeController {
         },
       });
 
+      // Generate updated cookies
+      const accessToken = generateAccessToken({
+        id: dbUser.id,
+        email: dbUser.email,
+        role: dbUser.role,
+        tier: tier,
+      });
+      const refreshToken = generateRefreshToken({ id: dbUser.id });
+      setAuthCookies(res, accessToken, refreshToken);
+
       res.status(200).json({
         success: true,
         message: `Plan upgraded successfully in sandbox mode to: ${tier}`,
+        accessToken,
+        refreshToken,
+        data: {
+          id: dbUser.id,
+          email: dbUser.email,
+          role: dbUser.role,
+          tier: tier,
+        }
       });
     } catch (error) {
       next(error);
@@ -193,6 +231,7 @@ export class StripeController {
               stripeCustomerId: session.customer as string,
               stripeSubscriptionId: session.subscription as string,
               currentPeriodEnd,
+              lastResetAt: new Date(),
             },
             create: {
               userId,
@@ -200,6 +239,24 @@ export class StripeController {
               stripeCustomerId: session.customer as string,
               stripeSubscriptionId: session.subscription as string,
               currentPeriodEnd,
+              lastResetAt: new Date(),
+            },
+          });
+
+          // Log billing history
+          const priceMap: Record<string, number> = {
+            FREE: 0,
+            PRO: 19,
+            ENTERPRISE: 49,
+          };
+
+          await prisma.billingHistory.create({
+            data: {
+              userId,
+              amount: priceMap[tier] || 0,
+              tier: tier as any,
+              stripeInvoiceId: session.invoice as string || `inv_stripe_${userId.slice(0, 8)}`,
+              status: "PAID",
             },
           });
 
@@ -217,6 +274,80 @@ export class StripeController {
       res.status(200).json({ received: true });
     } catch (error) {
       next(error);
+    }
+  }
+
+  // Utility: checks and resets user monthly subscription usage
+  public static async checkAndResetMonthlyUsage(userId: string): Promise<void> {
+    try {
+      const sub = await prisma.subscription.findUnique({
+        where: { userId },
+      });
+
+      if (!sub) return;
+
+      const now = new Date();
+      if (!sub.lastResetAt) {
+        await prisma.subscription.update({
+          where: { id: sub.id },
+          data: { lastResetAt: now },
+        });
+        return;
+      }
+
+      const lastReset = new Date(sub.lastResetAt);
+      const nowMonth = now.getUTCMonth();
+      const nowYear = now.getUTCFullYear();
+      const lastMonth = lastReset.getUTCMonth();
+      const lastYear = lastReset.getUTCFullYear();
+
+      if (nowMonth !== lastMonth || nowYear !== lastYear) {
+        logger.info(`Monthly boundary detected for user ${userId}. Resetting mock interview usage count.`);
+        
+        // Count interviews completed in that historical month
+        const startOfLastMonth = new Date(Date.UTC(lastYear, lastMonth, 1));
+        const endOfLastMonth = new Date(Date.UTC(lastYear, lastMonth + 1, 0, 23, 59, 59, 999));
+
+        const interviewsUsed = await prisma.interviewSession.count({
+          where: {
+            userId,
+            createdAt: {
+              gte: startOfLastMonth,
+              lte: endOfLastMonth,
+            },
+          },
+        });
+
+        // Save tracking log
+        await prisma.usageTracking.upsert({
+          where: {
+            userId_month_year: {
+              userId,
+              month: lastMonth + 1,
+              year: lastYear,
+            },
+          },
+          update: {
+            interviewsUsed,
+            resetAt: now,
+          },
+          create: {
+            userId,
+            month: lastMonth + 1,
+            year: lastYear,
+            interviewsUsed,
+            resetAt: now,
+          },
+        });
+
+        // Reset sub boundary
+        await prisma.subscription.update({
+          where: { id: sub.id },
+          data: { lastResetAt: now },
+        });
+      }
+    } catch (err: any) {
+      logger.error(`Error in checkAndResetMonthlyUsage: ${err.message}`);
     }
   }
 }

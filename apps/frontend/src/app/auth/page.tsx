@@ -106,12 +106,29 @@ export default function AuthPage() {
           document.cookie = `refresh_token=mock-refresh-token; path=/; max-age=604800; SameSite=Lax`;
         }
         router.push("/dashboard/home");
-      } else {
-        // Toggle to signin mode on successful signup
-        setAuthMode("signin");
-        setError(null);
-        alert("Account registered successfully! You can now log in.");
-      }
+        } else if (authMode === "signup") {
+          // Successful signup: set token and redirect to onboarding plan selection
+          if (typeof window !== "undefined") {
+            const fakeToken = btoa(
+              JSON.stringify({
+                id: result.data?.id,
+                email: result.data?.email,
+                role: result.data?.role,
+                name: result.data?.name || name || result.data?.email?.split("@")[0] || "Mock Candidate",
+                tier: "FREE", // initial tier is FREE
+              })
+            );
+            document.cookie = `access_token=${fakeToken}; path=/; max-age=900; SameSite=Lax`;
+            document.cookie = `refresh_token=mock-refresh-token; path=/; max-age=604800; SameSite=Lax`;
+          }
+          // Direct user to onboarding plan selection screen
+          router.push("/onboarding/plan");
+        } else {
+          // Toggle to signin mode on successful login
+          setAuthMode("signin");
+          setError(null);
+          alert("Account registered successfully! You can now log in.");
+        }
     } catch (err: any) {
       setError(err.message || "An unexpected authentication error occurred.");
     } finally {

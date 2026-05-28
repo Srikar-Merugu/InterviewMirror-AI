@@ -30,6 +30,7 @@ export function generateAccessToken(payload: {
   id: string;
   email: string;
   role: string;
+  tier?: string;
 }): string {
   return jwt.sign(payload, CONFIG.JWT_SECRET, {
     expiresIn: ACCESS_TOKEN_EXPIRY,

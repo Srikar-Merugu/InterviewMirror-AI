@@ -21,7 +21,9 @@ import {
   Video,
 } from "lucide-react";
 import { GLASSMORPHISM_STYLES, INTERACTION_CLASSES } from "@interviewmirror/ui";
+import { UpgradeModal } from "../../../components/UpgradeModal";
 import { getAuthHeaders } from "../../../utils/auth";
+import { FeatureLock } from "../../../components/FeatureLock";
 
 interface DBSession {
   id: string;
@@ -43,6 +45,7 @@ export default function DashboardHomePage() {
   const [roleTitle, setRoleTitle] = useState("");
   const [keySkills, setKeySkills] = useState("");
   const [creating, setCreating] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   // Dynamic Dashboard States
   const [sessions, setSessions] = useState<DBSession[]>([]);
@@ -167,10 +170,9 @@ export default function DashboardHomePage() {
     if (!roleTitle) return;
 
     if (isExceeded) {
-      alert("Monthly mock interview quota exceeded. Please upgrade your subscription tier to launch additional assessments.");
-      router.push("/pricing");
-      return;
-    }
+        setShowUpgradeModal(true);
+        return;
+      }
 
     setCreating(true);
     // Initialize custom role title & key skills inside client localstorage context!
@@ -204,7 +206,7 @@ export default function DashboardHomePage() {
         <button
           onClick={() => {
             if (isExceeded) {
-              router.push("/pricing");
+              setShowUpgradeModal(true);
             } else {
               router.push("/dashboard/interview");
             }
@@ -257,7 +259,7 @@ export default function DashboardHomePage() {
           </div>
         )}
         <button
-          onClick={() => router.push("/pricing")}
+          onClick={() => setShowUpgradeModal(true)}
           className="text-[10px] text-indigo-400 hover:text-indigo-300 font-bold flex items-center space-x-1 whitespace-nowrap bg-zinc-900 border border-zinc-800/80 px-3.5 py-2 rounded-lg cursor-pointer"
         >
           <span>Upgrade subscription</span>
@@ -284,7 +286,8 @@ export default function DashboardHomePage() {
       )}
 
       {/* KPI GRID */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <FeatureLock featureKey="analytics" fallback={<p className="text-xs text-gray-400">Upgrade to access analytics.</p>}>
+          <div className={`grid grid-cols-2 lg:grid-cols-4 gap-4`}>
         {[
           {
             name: "Average AI Score",
@@ -336,6 +339,7 @@ export default function DashboardHomePage() {
           </motion.div>
         ))}
       </div>
+      </FeatureLock>
 
       {/* Quick session initialiser split */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -403,6 +407,7 @@ export default function DashboardHomePage() {
                 <ArrowRight className="w-4 h-4 ml-1.5" />
               </button>
             </form>
+        <UpgradeModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
           </motion.div>
         </div>
 

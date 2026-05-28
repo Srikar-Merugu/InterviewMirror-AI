@@ -61,6 +61,7 @@ model Subscription {
   stripeCustomerId     String?          @unique
   stripeSubscriptionId String?          @unique
   currentPeriodEnd     DateTime?
+  lastResetAt          DateTime?
   createdAt            DateTime         @default(now())
   updatedAt            DateTime         @updatedAt
 }
@@ -209,3 +210,27 @@ model AuditLog {
 
   @@index([userId])
 }
+
+model UsageTracking {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId         String   @db.ObjectId
+  month          Int
+  year           Int
+  interviewsUsed Int      @default(0)
+  resetAt        DateTime @default(now())
+
+  @@unique([userId, month, year])
+}
+
+model BillingHistory {
+  id              String           @id @default(auto()) @map("_id") @db.ObjectId
+  userId          String           @db.ObjectId
+  amount          Float
+  tier            SubscriptionTier
+  stripeInvoiceId String?
+  billedAt        DateTime         @default(now())
+  status          String
+
+  @@index([userId])
+}
+

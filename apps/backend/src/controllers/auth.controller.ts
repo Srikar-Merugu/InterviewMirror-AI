@@ -17,6 +17,7 @@ import {
   setAuthCookies,
   clearAuthCookies,
 } from "../utils/auth";
+import { StripeController } from "./stripe.controller";
 
 export class AuthController {
   // Candidate Registration
@@ -408,11 +409,16 @@ export class AuthController {
         },
       });
 
+      const subscription = await prisma.subscription.findUnique({
+        where: { userId: user.id },
+      });
+
       // Generate Access & Refresh Tokens
       const accessToken = generateAccessToken({
         id: user.id,
         email: user.email,
         role: user.role,
+        tier: subscription?.tier,
       });
       const refreshToken = generateRefreshToken({ id: user.id });
 
@@ -516,11 +522,16 @@ export class AuthController {
         data: { isRevoked: true },
       });
 
+      const subscription = await prisma.subscription.findUnique({
+        where: { userId: dbToken.user.id },
+      });
+
       // Issue new ones (Rotation!)
       const nextAccessToken = generateAccessToken({
         id: dbToken.user.id,
         email: dbToken.user.email,
         role: dbToken.user.role,
+        tier: subscription?.tier,
       });
       const nextRefreshToken = generateRefreshToken({ id: dbToken.user.id });
 
@@ -649,11 +660,16 @@ export class AuthController {
         }
       }
 
+      const subscription = await prisma.subscription.findUnique({
+        where: { userId: user.id },
+      });
+
       // Generate Access & Refresh tokens
       const accessToken = generateAccessToken({
         id: user.id,
         email: user.email,
         role: user.role,
+        tier: subscription?.tier,
       });
       const refreshToken = generateRefreshToken({ id: user.id });
 
@@ -705,6 +721,9 @@ export class AuthController {
       if (!req.user) {
         throw new UnauthorizedError("Candidate is not authenticated");
       }
+
+      // Check and execute monthly reset bounds
+      await StripeController.checkAndResetMonthlyUsage(req.user.id);
 
       let user = await prisma.user.findUnique({
         where: { id: req.user.id },

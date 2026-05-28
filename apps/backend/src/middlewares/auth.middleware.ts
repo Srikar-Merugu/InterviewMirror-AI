@@ -7,6 +7,7 @@ export interface AuthenticatedRequest extends Request {
     id: string;
     email: string;
     role: string;
+    tier?: string;
   };
 }
 
@@ -34,6 +35,7 @@ export const requireAuth = (
       id: "recruiter-user-id",
       email: "recruiter@interviewmirror.com",
       role: "RECRUITER",
+      tier: "ENTERPRISE",
     };
     return next();
   }
@@ -43,6 +45,7 @@ export const requireAuth = (
       id: "mock-user-id",
       email: "candidate@interviewmirror.com",
       role: "USER",
+      tier: "FREE",
     };
     return next();
   }
@@ -54,6 +57,7 @@ export const requireAuth = (
       id: verified.id,
       email: verified.email,
       role: verified.role,
+      tier: verified.tier,
     };
     return next();
   }
@@ -65,6 +69,7 @@ export const requireAuth = (
       id: decoded.id || "mock-clerk-user-id",
       email: decoded.email || "user@interviewmirror.com",
       role: decoded.role || "USER",
+      tier: decoded.tier,
     };
     next();
   } catch (error) {

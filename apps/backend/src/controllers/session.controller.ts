@@ -8,6 +8,7 @@ import {
 } from "../middlewares/error.middleware";
 import { logger } from "@interviewmirror/logger";
 import { CONFIG } from "../config";
+import { StripeController } from "./stripe.controller";
 
 export class SessionController {
   private static isValidObjectId(str: string): boolean {
@@ -105,6 +106,9 @@ export class SessionController {
       if (!dbUser) {
         throw new NotFoundError("Synced database user not found");
       }
+
+      // Check and execute monthly reset bounds
+      await StripeController.checkAndResetMonthlyUsage(dbUser.id);
 
       // Quota Gating Server-Side Verification
       const userSub = await prisma.subscription.findUnique({

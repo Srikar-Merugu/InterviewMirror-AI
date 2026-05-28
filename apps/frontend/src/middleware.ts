@@ -4,10 +4,10 @@ import type { NextRequest } from "next/server";
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const accessToken = request.cookies.get("access_token")?.value;
-  const refreshToken = request.cookies.get("refresh_token")?.value;
 
   const isDashboardRoute = pathname.startsWith("/dashboard");
   const isAuthRoute = pathname.startsWith("/auth");
+  const isOnboardingRoute = pathname.startsWith("/onboarding");
 
   // Decodes JWT payload and checks expiration
   const isTokenExpired = (token: string): boolean => {
@@ -32,17 +32,51 @@ export function middleware(request: NextRequest) {
     }
   };
 
-  // Route protection rules
+  // Decode token to extract tier claim
+  const getTokenPayload = (token: string): any => {
+    try {
+      const payloadPart = token.split('.')[1];
+      if (!payloadPart) return {};
+      const base64 = payloadPart.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split('')
+          .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+          .join(''),
+      );
+      return JSON.parse(jsonPayload);
+    } catch {
+      return {};
+    }
+  };
+
   if (isDashboardRoute) {
-    if (!accessToken && !refreshToken) {
+    if (!accessToken || isTokenExpired(accessToken)) {
       const redirectUrl = request.nextUrl.clone();
       redirectUrl.pathname = "/auth";
       return NextResponse.redirect(redirectUrl);
     }
+    const payload = getTokenPayload(accessToken);
+    const tier = payload.tier;
+    // Exclude demo user from tier gating
+    if (payload.email !== 'demo@interviewmirror.ai' && !tier) {
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = '/onboarding/plan';
+      return NextResponse.redirect(redirectUrl);
+    }
+  }
 
-    if (accessToken && isTokenExpired(accessToken) && !refreshToken) {
+  if (isOnboardingRoute) {
+    if (!accessToken || isTokenExpired(accessToken)) {
       const redirectUrl = request.nextUrl.clone();
       redirectUrl.pathname = "/auth";
+      return NextResponse.redirect(redirectUrl);
+    }
+    const payload = getTokenPayload(accessToken);
+    const tier = payload.tier;
+    if (tier === 'FREE' || tier === 'PRO' || tier === 'ENTERPRISE') {
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = '/dashboard/home';
       return NextResponse.redirect(redirectUrl);
     }
   }
@@ -59,5 +93,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/auth"],
+  matcher: ["/dashboard/:path*", "/auth", "/onboarding/:path*"],
 };
