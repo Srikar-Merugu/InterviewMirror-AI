@@ -18,6 +18,7 @@ import {
   HelpCircle,
   Download,
   AlertTriangle,
+  Target,
 } from "lucide-react";
 import { GLASSMORPHISM_STYLES, INTERACTION_CLASSES } from "@interviewmirror/ui";
 
@@ -35,6 +36,76 @@ interface ReportData {
   feedbacks: { type: "strength" | "warning"; message: string }[];
   rubrics: { name: string; score: number; status: string }[];
 }
+
+interface ImprovementTask {
+  title: string;
+  detail: string;
+  action: string;
+  priority: "High" | "Medium" | "Low";
+}
+
+const buildImprovementPlan = (report: ReportData): ImprovementTask[] => {
+  const lowestRubric = [...report.rubrics].sort((a, b) => a.score - b.score)[0];
+  const topFiller = [...report.fillers].sort((a, b) => b.count - a.count)[0];
+  const plan: ImprovementTask[] = [];
+
+  if (lowestRubric) {
+    plan.push({
+      title: `Raise ${lowestRubric.name}`,
+      detail: `Current score is ${lowestRubric.score}/100, making this the biggest lever for your next mock run.`,
+      action:
+        lowestRubric.name === "Technical Depth"
+          ? "Answer with a compact problem, tradeoff, implementation, and testing structure."
+          : lowestRubric.name === "Communication Clarity"
+            ? "Use one silent pause before each key point and keep answers under 90 seconds."
+            : "Open with situation, role, decision, and measurable outcome for behavioral answers.",
+      priority: lowestRubric.score < 70 ? "High" : "Medium",
+    });
+  }
+
+  if (report.postureScore < 85) {
+    plan.push({
+      title: "Stabilize camera posture",
+      detail: `Posture accuracy is ${report.postureScore}%, so shoulder alignment is still costing points.`,
+      action:
+        "Place the camera at eye level, sit one arm's length away, and reset shoulders before every answer.",
+      priority: report.postureScore < 70 ? "High" : "Medium",
+    });
+  }
+
+  if (report.eyeContactScore < 85) {
+    plan.push({
+      title: "Improve gaze consistency",
+      detail: `Eye engagement is ${report.eyeContactScore}%, which can lower perceived confidence in remote interviews.`,
+      action:
+        "Look at the camera during conclusions, then glance at notes only while setting up the next point.",
+      priority: report.eyeContactScore < 70 ? "High" : "Medium",
+    });
+  }
+
+  if (topFiller && topFiller.count > 0) {
+    plan.push({
+      title: `Reduce "${topFiller.word}" fillers`,
+      detail: `Detected ${topFiller.count} instance${topFiller.count === 1 ? "" : "s"} of your most common filler.`,
+      action:
+        "Replace fillers with a one-second pause, then restart with 'The key point is...'.",
+      priority: topFiller.count > 3 ? "High" : "Low",
+    });
+  }
+
+  if (plan.length === 0) {
+    plan.push({
+      title: "Maintain interview readiness",
+      detail:
+        "Your report has no major weak signal, so the next step is consistency under a harder prompt.",
+      action:
+        "Run one system design and one behavioral mock with stricter 60-second answer limits.",
+      priority: "Low",
+    });
+  }
+
+  return plan.slice(0, 4);
+};
 
 export default function ReportDetailPage() {
   const params = useParams();
@@ -350,6 +421,8 @@ export default function ReportDetailPage() {
 
   if (!report) return null;
 
+  const improvementPlan = buildImprovementPlan(report);
+
   return (
     <div className="space-y-6 relative overflow-hidden">
       {/* Upper navigation header */}
@@ -509,6 +582,52 @@ export default function ReportDetailPage() {
                     <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
                   )}
                   <p className="text-zinc-300 leading-relaxed">{f.message}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div
+            className={`${GLASSMORPHISM_STYLES.card} p-5 border-zinc-900/60`}
+          >
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <h3 className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider flex items-center gap-2">
+                <Target className="w-3.5 h-3.5 text-indigo-400" />
+                Personalized Improvement Plan
+              </h3>
+              <span className="text-[9px] uppercase font-bold text-indigo-400 bg-indigo-950/20 border border-indigo-900/30 px-2 py-0.5 rounded">
+                Next Run
+              </span>
+            </div>
+
+            <div className="space-y-3.5">
+              {improvementPlan.map((task) => (
+                <div
+                  key={task.title}
+                  className="grid grid-cols-1 sm:grid-cols-[84px_1fr] gap-3 border-t border-zinc-900/70 first:border-t-0 first:pt-0 pt-3"
+                >
+                  <div
+                    className={`text-[9px] uppercase font-black tracking-wider ${
+                      task.priority === "High"
+                        ? "text-red-400"
+                        : task.priority === "Medium"
+                          ? "text-amber-400"
+                          : "text-emerald-400"
+                    }`}
+                  >
+                    {task.priority} Priority
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-zinc-200">
+                      {task.title}
+                    </div>
+                    <p className="text-[11px] text-zinc-500 leading-relaxed mt-1">
+                      {task.detail}
+                    </p>
+                    <p className="text-[11px] text-zinc-300 leading-relaxed mt-1.5">
+                      {task.action}
+                    </p>
+                  </div>
                 </div>
               ))}
             </div>

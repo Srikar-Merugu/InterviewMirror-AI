@@ -3,7 +3,11 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": [".next/**", "dist/**", "out/**"]
+      "outputs": [".next/**", "dist/**", "out/**"],
+      "env": [
+        "NEXT_PUBLIC_API_URL",
+        "NODE_ENV"
+      ]
     },
     "dev": {
       "cache": false,

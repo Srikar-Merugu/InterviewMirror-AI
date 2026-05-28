@@ -39314,6 +39314,23 @@ if (CONFIG.NODE_ENV === "production" && !process.env.DATABASE_URL) {
 
 // apps/backend/src/controllers/session.controller.ts
 var SessionController = class _SessionController {
+  static isValidObjectId(str) {
+    return /^[0-9a-fA-F]{24}$/.test(str);
+  }
+  static async resolveDatabaseUser(userPayload) {
+    let dbUser = null;
+    if (_SessionController.isValidObjectId(userPayload.id)) {
+      dbUser = await prisma.user.findUnique({
+        where: { id: userPayload.id }
+      });
+    }
+    if (!dbUser && userPayload.email) {
+      dbUser = await prisma.user.findUnique({
+        where: { email: userPayload.email }
+      });
+    }
+    return dbUser;
+  }
   // Sync Clerk/Auth.js User into database
   static async syncUser(req, res, next) {
     try {
@@ -39323,9 +39340,8 @@ var SessionController = class _SessionController {
           "User auth payload missing from request context"
         );
       }
-      const isValidObjectId = (str) => /^[0-9a-fA-F]{24}$/.test(str);
       let user = null;
-      if (isValidObjectId(userPayload.id)) {
+      if (_SessionController.isValidObjectId(userPayload.id)) {
         user = await prisma.user.findUnique({
           where: { id: userPayload.id }
         });
@@ -39365,18 +39381,7 @@ var SessionController = class _SessionController {
       if (!title) {
         throw new BadRequestError("Session title is required");
       }
-      const isValidObjectId = (str) => /^[0-9a-fA-F]{24}$/.test(str);
-      let dbUser = null;
-      if (isValidObjectId(userPayload.id)) {
-        dbUser = await prisma.user.findUnique({
-          where: { id: userPayload.id }
-        });
-      }
-      if (!dbUser && userPayload.email) {
-        dbUser = await prisma.user.findUnique({
-          where: { email: userPayload.email }
-        });
-      }
+      const dbUser = await _SessionController.resolveDatabaseUser(userPayload);
       if (!dbUser) {
         throw new NotFoundError("Synced database user not found");
       }
@@ -39661,18 +39666,7 @@ var SessionController = class _SessionController {
       if (!userPayload) {
         throw new BadRequestError("User is not authenticated");
       }
-      const isValidObjectId = (str) => /^[0-9a-fA-F]{24}$/.test(str);
-      let dbUser = null;
-      if (isValidObjectId(userPayload.id)) {
-        dbUser = await prisma.user.findUnique({
-          where: { id: userPayload.id }
-        });
-      }
-      if (!dbUser && userPayload.email) {
-        dbUser = await prisma.user.findUnique({
-          where: { email: userPayload.email }
-        });
-      }
+      const dbUser = await _SessionController.resolveDatabaseUser(userPayload);
       if (!dbUser) {
         throw new NotFoundError("Synced database user not found");
       }
@@ -39700,8 +39694,7 @@ var SessionController = class _SessionController {
           "videoUrl is required to run computer vision analysis"
         );
       }
-      const isValidObjectId = (str) => /^[0-9a-fA-F]{24}$/.test(str);
-      if (!isValidObjectId(id)) {
+      if (!_SessionController.isValidObjectId(id)) {
         res.status(202).json({
           success: true,
           message: "Legacy mock session analysis initiated successfully.",
@@ -39743,8 +39736,7 @@ var SessionController = class _SessionController {
   static async getReport(req, res, next) {
     try {
       const { id } = req.params;
-      const isValidObjectId = (str) => /^[0-9a-fA-F]{24}$/.test(str);
-      if (!isValidObjectId(id)) {
+      if (!_SessionController.isValidObjectId(id)) {
         res.status(200).json({
           success: true,
           data: {

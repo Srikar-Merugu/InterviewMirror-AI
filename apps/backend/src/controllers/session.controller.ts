@@ -10,6 +10,29 @@ import { logger } from "@interviewmirror/logger";
 import { CONFIG } from "../config";
 
 export class SessionController {
+  private static isValidObjectId(str: string): boolean {
+    return /^[0-9a-fA-F]{24}$/.test(str);
+  }
+
+  private static async resolveDatabaseUser(userPayload: {
+    id: string;
+    email: string;
+  }) {
+    let dbUser = null;
+    if (SessionController.isValidObjectId(userPayload.id)) {
+      dbUser = await prisma.user.findUnique({
+        where: { id: userPayload.id },
+      });
+    }
+    if (!dbUser && userPayload.email) {
+      dbUser = await prisma.user.findUnique({
+        where: { email: userPayload.email },
+      });
+    }
+
+    return dbUser;
+  }
+
   // Sync Clerk/Auth.js User into database
   public static async syncUser(
     req: AuthenticatedRequest,
@@ -25,9 +48,8 @@ export class SessionController {
       }
 
       // Check if user exists, else create
-      const isValidObjectId = (str: string) => /^[0-9a-fA-F]{24}$/.test(str);
       let user = null;
-      if (isValidObjectId(userPayload.id)) {
+      if (SessionController.isValidObjectId(userPayload.id)) {
         user = await prisma.user.findUnique({
           where: { id: userPayload.id },
         });
@@ -78,18 +100,7 @@ export class SessionController {
       }
 
       // Ensure user exists in database
-      const isValidObjectId = (str: string) => /^[0-9a-fA-F]{24}$/.test(str);
-      let dbUser = null;
-      if (isValidObjectId(userPayload.id)) {
-        dbUser = await prisma.user.findUnique({
-          where: { id: userPayload.id },
-        });
-      }
-      if (!dbUser && userPayload.email) {
-        dbUser = await prisma.user.findUnique({
-          where: { email: userPayload.email },
-        });
-      }
+      const dbUser = await SessionController.resolveDatabaseUser(userPayload);
 
       if (!dbUser) {
         throw new NotFoundError("Synced database user not found");
@@ -453,18 +464,7 @@ export class SessionController {
         throw new BadRequestError("User is not authenticated");
       }
 
-      const isValidObjectId = (str: string) => /^[0-9a-fA-F]{24}$/.test(str);
-      let dbUser = null;
-      if (isValidObjectId(userPayload.id)) {
-        dbUser = await prisma.user.findUnique({
-          where: { id: userPayload.id },
-        });
-      }
-      if (!dbUser && userPayload.email) {
-        dbUser = await prisma.user.findUnique({
-          where: { email: userPayload.email },
-        });
-      }
+      const dbUser = await SessionController.resolveDatabaseUser(userPayload);
 
       if (!dbUser) {
         throw new NotFoundError("Synced database user not found");
@@ -502,8 +502,7 @@ export class SessionController {
         );
       }
 
-      const isValidObjectId = (str: string) => /^[0-9a-fA-F]{24}$/.test(str);
-      if (!isValidObjectId(id)) {
+      if (!SessionController.isValidObjectId(id)) {
         res.status(202).json({
           success: true,
           message: "Legacy mock session analysis initiated successfully.",
@@ -559,8 +558,7 @@ export class SessionController {
     try {
       const { id } = req.params;
 
-      const isValidObjectId = (str: string) => /^[0-9a-fA-F]{24}$/.test(str);
-      if (!isValidObjectId(id)) {
+      if (!SessionController.isValidObjectId(id)) {
         // Return a premium mock report response for legacy mock IDs
         res.status(200).json({
           success: true,
