@@ -48,6 +48,7 @@ export default function DashboardHomePage() {
   const [sessions, setSessions] = useState<DBSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [user, setUser] = useState<any>(null);
 
   // KPIs
   const [avgScore, setAvgScore] = useState<number>(0);
@@ -55,9 +56,9 @@ export default function DashboardHomePage() {
   const [slumpCount, setSlumpCount] = useState<string>("0 / run");
   const [completedCount, setCompletedCount] = useState<number>(0);
 
-  // Fetch real sessions list on mount
+  // Fetch real sessions list and user profile on mount
   useEffect(() => {
-    const fetchUserSessions = async () => {
+    const fetchDashboardData = async () => {
       try {
         const isDev =
           typeof window !== "undefined" &&
@@ -66,6 +67,20 @@ export default function DashboardHomePage() {
            window.location.hostname === "127.0.0.1");
         const apiBase = process.env.NEXT_PUBLIC_API_URL || (isDev ? `http://${window.location.hostname}:5001` : "");
 
+        // Fetch User Profile
+        const userRes = await fetch(`${apiBase}/api/v1/auth/me`, {
+          headers: getAuthHeaders(),
+          credentials: "include",
+        });
+
+        if (userRes.ok) {
+          const userJson = await userRes.json();
+          if (userJson.success && userJson.data) {
+            setUser(userJson.data);
+          }
+        }
+
+        // Fetch Sessions
         const response = await fetch(`${apiBase}/api/v1/interviews`, {
           headers: getAuthHeaders(),
           credentials: "include", // Access cookies context securely
@@ -136,12 +151,26 @@ export default function DashboardHomePage() {
       }
     };
 
-    fetchUserSessions();
+    fetchDashboardData();
   }, []);
+
+  const isFree = user?.subscription?.tier === "FREE" || !user?.subscription?.tier;
+  const isPro = user?.subscription?.tier === "PRO";
+  const tierName = isFree ? "Mock Sandbox (Free)" : isPro ? "Professional Candidate (Pro)" : "Recruiter Enterprise (Premium)";
+  const limit = isFree ? 5 : isPro ? 30 : Infinity;
+  const used = user?.interviewsUsed || 0;
+  const progress = limit === Infinity ? 0 : Math.min(100, (used / limit) * 100);
+  const isExceeded = limit !== Infinity && used >= limit;
 
   const handleCreateSession = (e: React.FormEvent) => {
     e.preventDefault();
     if (!roleTitle) return;
+
+    if (isExceeded) {
+      alert("Monthly mock interview quota exceeded. Please upgrade your subscription tier to launch additional assessments.");
+      router.push("/pricing");
+      return;
+    }
 
     setCreating(true);
     // Initialize custom role title & key skills inside client localstorage context!
@@ -172,14 +201,87 @@ export default function DashboardHomePage() {
           </p>
         </div>
 
-        <Link
-          href="/dashboard/interview"
-          className={`${INTERACTION_CLASSES.primaryButton} shadow-lg shadow-indigo-500/5`}
+        <button
+          onClick={() => {
+            if (isExceeded) {
+              router.push("/pricing");
+            } else {
+              router.push("/dashboard/interview");
+            }
+          }}
+          className={`${isExceeded ? "bg-red-950/40 text-red-400 border border-red-900/30 hover:bg-red-900/10" : INTERACTION_CLASSES.primaryButton} shadow-lg shadow-indigo-500/5 py-2.5 px-4 rounded-md text-xs font-semibold flex items-center justify-center cursor-pointer`}
         >
-          <Play className="w-4 h-4 mr-1.5 fill-current" />
-          <span>Launch sandbox</span>
-        </Link>
+          {isExceeded ? (
+            <>
+              <AlertCircle className="w-4 h-4 mr-1.5" />
+              <span>Quota Locked - Upgrade Plan</span>
+            </>
+          ) : (
+            <>
+              <Play className="w-4 h-4 mr-1.5 fill-current" />
+              <span>Launch sandbox</span>
+            </>
+          )}
+        </button>
       </div>
+
+      {/* Active Quota Tracker Bar */}
+      <div className={`${GLASSMORPHISM_STYLES.card} p-4 border-zinc-900/60 flex flex-col md:flex-row items-center justify-between gap-4 bg-zinc-950/10 hover:border-zinc-800 transition-colors`}>
+        <div className="flex items-center space-x-3 w-full md:w-auto">
+          <div className="p-2.5 bg-indigo-950/40 border border-indigo-900/30 text-indigo-400 rounded-lg">
+            <Sparkles className="w-4 h-4" />
+          </div>
+          <div>
+            <div className="text-xs font-bold text-zinc-200">
+              Active Tier: <span className="text-indigo-400 font-extrabold">{tierName}</span>
+            </div>
+            <div className="text-[10px] text-zinc-500 mt-0.5">
+              {limit === Infinity 
+                ? "Unlimited premium mock sessions completely unlocked." 
+                : `${used} of ${limit} monthly mock interview runs completed.`}
+            </div>
+          </div>
+        </div>
+        {limit !== Infinity && (
+          <div className="w-full md:w-64 space-y-1.5">
+            <div className="w-full bg-zinc-950/60 rounded-full h-1.5 border border-zinc-900 overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${isExceeded ? "bg-red-500" : progress > 80 ? "bg-amber-500" : "bg-indigo-500"}`}
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <div className="flex justify-between text-[9px] font-mono text-zinc-500">
+              <span>{progress.toFixed(0)}% quota consumed</span>
+              <span>{Math.max(0, limit - used)} remaining</span>
+            </div>
+          </div>
+        )}
+        <button
+          onClick={() => router.push("/pricing")}
+          className="text-[10px] text-indigo-400 hover:text-indigo-300 font-bold flex items-center space-x-1 whitespace-nowrap bg-zinc-900 border border-zinc-800/80 px-3.5 py-2 rounded-lg cursor-pointer"
+        >
+          <span>Upgrade subscription</span>
+          <ArrowRight className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
+      {/* Quota Exceeded Warn Alert Banner */}
+      {isExceeded && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-red-950/20 border border-red-900/30 text-red-400 p-4 rounded-xl flex items-start space-x-3 text-xs leading-relaxed shadow-lg shadow-red-950/10"
+        >
+          <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <div className="font-bold text-red-200">Monthly interview limits exceeded</div>
+            <div>
+              You have completed all {used} available mock runs for your current tier this month.
+              To continue conducting immersive webcam and audio analytics evaluations, please upgrade to the Pro or Recruiter Enterprise plan.
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       {/* KPI GRID */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

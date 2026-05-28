@@ -106,6 +106,39 @@ export class SessionController {
         throw new NotFoundError("Synced database user not found");
       }
 
+      // Quota Gating Server-Side Verification
+      const userSub = await prisma.subscription.findUnique({
+        where: { userId: dbUser.id },
+      });
+      const userTier = userSub?.tier || "FREE";
+
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+
+      const interviewCount = await prisma.interviewSession.count({
+        where: {
+          userId: dbUser.id,
+          createdAt: {
+            gte: startOfMonth,
+          },
+        },
+      });
+
+      if (userTier === "FREE" && interviewCount >= 5) {
+        throw new AppError(
+          "Monthly interview quota exceeded. Free Tier is limited to 5 mock interviews per month. Please upgrade your plan to unlock more runs.",
+          403,
+        );
+      }
+
+      if (userTier === "PRO" && interviewCount >= 30) {
+        throw new AppError(
+          "Monthly interview quota exceeded. Pro Tier is limited to 30 mock interviews per month. Please upgrade to the Premium Plan to unlock unlimited sessions.",
+          403,
+        );
+      }
+
       // Create session as COMPLETED so it displays dynamically
       const session = await prisma.interviewSession.create({
         data: {

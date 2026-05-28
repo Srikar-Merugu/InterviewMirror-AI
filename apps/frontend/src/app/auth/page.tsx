@@ -340,106 +340,16 @@ export default function AuthPage() {
 
           <div className="grid grid-cols-2 gap-2 mb-6">
             <button
-              onClick={async () => {
-                setError(null);
-                setSubmitting(true);
-                try {
-                  const isDev =
-                    typeof window !== "undefined" &&
-                    (window.location.port === "3000" ||
-                     window.location.hostname === "localhost" ||
-                     window.location.hostname === "127.0.0.1");
-                  const apiBase = process.env.NEXT_PUBLIC_API_URL || (isDev ? `http://${window.location.hostname}:5001` : "");
-                  const response = await fetch(`${apiBase}/api/v1/auth/oauth`, {
-                    method: "POST",
-                    headers: {
-                      "Content-Type": "application/json",
-                    },
-                    credentials: "include",
-                    body: JSON.stringify({
-                      provider: "google",
-                      providerId: "google-mock-id",
-                      email: "srikar@interviewmirror.com",
-                      name: "Srikar Merugu",
-                    }),
-                  });
-                  const result = await response.json();
-                  if (!response.ok)
-                    throw new Error(result.message || "Google OAuth failed");
-                  if (typeof window !== "undefined") {
-                    window.localStorage.setItem(
-                      "mock_auth_token",
-                      "mock-user-token",
-                    );
-                    const fakeToken = btoa(
-                      JSON.stringify({
-                        id: result.data?.id,
-                        email: result.data?.email,
-                        role: result.data?.role,
-                      }),
-                    );
-                    document.cookie = `access_token=${fakeToken}; path=/; max-age=900; SameSite=Lax`;
-                    document.cookie = `refresh_token=mock-refresh-token; path=/; max-age=604800; SameSite=Lax`;
-                  }
-                  router.push("/dashboard/home");
-                } catch (err: any) {
-                  setError(err.message);
-                } finally {
-                  setSubmitting(false);
-                }
+              onClick={() => {
+                router.push("/auth/google");
               }}
               className="bg-zinc-900 text-zinc-200 border border-zinc-800 hover:bg-zinc-800 transition-colors py-2 px-3 rounded-md text-xs font-semibold flex items-center justify-center space-x-1.5 cursor-pointer"
             >
               <span>Google</span>
             </button>
             <button
-              onClick={async () => {
-                setError(null);
-                setSubmitting(true);
-                try {
-                  const isDev =
-                    typeof window !== "undefined" &&
-                    (window.location.port === "3000" ||
-                     window.location.hostname === "localhost" ||
-                     window.location.hostname === "127.0.0.1");
-                  const apiBase = process.env.NEXT_PUBLIC_API_URL || (isDev ? `http://${window.location.hostname}:5001` : "");
-                  const response = await fetch(`${apiBase}/api/v1/auth/oauth`, {
-                    method: "POST",
-                    headers: {
-                      "Content-Type": "application/json",
-                    },
-                    credentials: "include",
-                    body: JSON.stringify({
-                      provider: "github",
-                      providerId: "github-mock-id",
-                      email: "srikar_git@interviewmirror.com",
-                      name: "Srikar GitHub",
-                    }),
-                  });
-                  const result = await response.json();
-                  if (!response.ok)
-                    throw new Error(result.message || "GitHub OAuth failed");
-                  if (typeof window !== "undefined") {
-                    window.localStorage.setItem(
-                      "mock_auth_token",
-                      "mock-user-token",
-                    );
-                    const fakeToken = btoa(
-                      JSON.stringify({
-                        id: result.data?.id,
-                        email: result.data?.email,
-                        role: result.data?.role,
-                      }),
-                    );
-                    document.cookie = `access_token=${fakeToken}; path=/; max-age=900; SameSite=Lax`;
-                    document.cookie = `refresh_token=mock-refresh-token; path=/; max-age=604800; SameSite=Lax`;
-                  }
-                  router.push("/dashboard/home");
-                } catch (err: any) {
-                  setError(err.message);
-                } finally {
-                  setSubmitting(false);
-                }
+              onClick={() => {
+                router.push("/auth/github");
               }}
               className="bg-zinc-900 text-zinc-200 border border-zinc-800 hover:bg-zinc-800 transition-colors py-2 px-3 rounded-md text-xs font-semibold flex items-center justify-center space-x-1.5 cursor-pointer"
             >

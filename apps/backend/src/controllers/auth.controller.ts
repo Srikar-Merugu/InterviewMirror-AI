@@ -97,6 +97,246 @@ export class AuthController {
         throw new BadRequestError("Email and password are required");
       }
 
+      // Automated Demo Account Seeder
+      if (email === "demo@interviewmirror.ai" && password === "Demo@123") {
+        let demoUser = await prisma.user.findUnique({
+          where: { email: "demo@interviewmirror.ai" },
+          include: { subscription: true },
+        });
+
+        if (!demoUser) {
+          logger.info("Demo user requested but missing from database. Seeding dynamic premium dataset...");
+          const passwordHash = await hashPassword("Demo@123");
+          demoUser = await prisma.user.create({
+            data: {
+              email: "demo@interviewmirror.ai",
+              passwordHash,
+              name: "Demo Recruiter",
+              role: "USER",
+              provider: "credentials",
+              emailVerified: true,
+              subscription: {
+                create: {
+                  tier: "ENTERPRISE",
+                },
+              },
+            },
+            include: { subscription: true },
+          });
+
+          // Seed 10 Dynamic Mock Sessions
+          const sessionsData = [
+            {
+              title: "Senior React Architect",
+              company: "Apple",
+              desc: "Evaluation under Apple Silicon Core. React Native and metal thread performance.",
+              score: 88,
+              comm: 92,
+              tech: 85,
+              feedback: "Richard demonstrated exceptional competence in virtualized rendering pipelines. Gaze coordinates mapped 92% screen directness. Speaking posture shoulder tilts were aligned with zero slump events flagged.",
+              recommendations: [
+                "Reduce fast speech transitions during visualizer questions.",
+                "Maintain standard 1-second silent pauses to reinforce architecture weight.",
+              ],
+              daysAgo: 2,
+            },
+            {
+              title: "AI Infrastructure Engineer",
+              company: "Vercel",
+              desc: "Next.js 15 Server Action security boundaries and cold-start mitigations.",
+              score: 82,
+              comm: 85,
+              tech: 80,
+              feedback: "Strong core systems logic with minor fillers recorded during edge caching definitions. Posture slump count was limited to 1 event.",
+              recommendations: [
+                "Limit verbal transitions like 'so' to under 2 per minute.",
+                "Keep eye directness sustained during complex security walkthroughs.",
+              ],
+              daysAgo: 5,
+            },
+            {
+              title: "Staff Fullstack Engineer",
+              company: "Linear",
+              desc: "Real-time sync architectures, WebSockets connection scaling, and conflict-free replicated data types.",
+              score: 91,
+              comm: 95,
+              tech: 88,
+              feedback: "Stunning conceptual mastery. Seamless articulation, outstanding confidence metrics, perfect posture alignment, zero vocal speech filler words.",
+              recommendations: [
+                "Ready for deployment. Excellent communication profile.",
+              ],
+              daysAgo: 8,
+            },
+            {
+              title: "Backend API Systems Developer",
+              company: "Stripe",
+              desc: "Distributed ledger reconciliation, idempotent payment handlers, and multi-tenant DB sharding.",
+              score: 78,
+              comm: 74,
+              tech: 82,
+              feedback: "Very strong systems design capacity but high verbal filler density (um, like) during transaction deadlock troubleshooting.",
+              recommendations: [
+                "Practice deliberate silent pauses instead of verbal search fillers.",
+                "Align shoulder slopes to minimize neck strain alerts.",
+              ],
+              daysAgo: 11,
+            },
+            {
+              title: "Product Engineer YC Sandbox",
+              company: "Y Combinator",
+              desc: "Fast iteration MVC prototyping, fullstack user analytics, and Stripe checkout hooks.",
+              score: 85,
+              comm: 88,
+              tech: 83,
+              feedback: "High-energy startup product engineer. Resilient speech rate and standard-grade camera posture.",
+              recommendations: [
+                "Optimize breathing patterns to avoid rapid speech rate rushes.",
+              ],
+              daysAgo: 14,
+            },
+            {
+              title: "Machine Learning Lead",
+              company: "Scale AI",
+              desc: "Reinforcement learning from human feedback, token processing speedups, and model fine-tuning.",
+              score: 86,
+              comm: 89,
+              tech: 84,
+              feedback: "Excellent posture scores. Highly scientific and metrics-driven candidate with minor vocal filler rates.",
+              recommendations: [
+                "Introduce warmer communication framing during leadership responses.",
+              ],
+              daysAgo: 17,
+            },
+            {
+              title: "UX Frontend Specialist",
+              company: "Figma",
+              desc: "Vector editor layout performance, canvas rendering, and GPU layers.",
+              score: 84,
+              comm: 86,
+              tech: 82,
+              feedback: "Good structural feedback. Maintained consistent eye contact with standard slumping constraints.",
+              recommendations: [
+                "Extend head alignment slightly backward to optimize posture.",
+              ],
+              daysAgo: 20,
+            },
+            {
+              title: "Lead DevOps Architect",
+              company: "HashiCorp",
+              desc: "Terraform enterprise orchestration, dynamic secret storage pipelines, and Zero-Trust networks.",
+              score: 72,
+              comm: 68,
+              tech: 76,
+              feedback: "Strong core operations skill set but posture and speech filler metrics need work. 3 slump events were flagged by posture models.",
+              recommendations: [
+                "Adjust camera height to support ergonomic back posture.",
+                "Slow down the overall speech rate.",
+              ],
+              daysAgo: 23,
+            },
+            {
+              title: "Senior Next.js Developer",
+              company: "Y Combinator",
+              desc: "Server Component rendering, streaming HTML, and edge runtime limits.",
+              score: 89,
+              comm: 90,
+              tech: 88,
+              feedback: "Outstanding startup candidate. Engaging presentation, fluid speed rate, clean eye contact landmarks.",
+              recommendations: [
+                "Ready for recruiter loops.",
+              ],
+              daysAgo: 26,
+            },
+            {
+              title: "Core Systems Engineer",
+              company: "OpenAI",
+              desc: "Distributed model compilation, heavy GPU cluster scheduling, and CUDA optimization.",
+              score: 94,
+              comm: 97,
+              tech: 92,
+              feedback: "World-class talent. Exemplary eye focal accuracy, elegant postural control, flawless communication pacing.",
+              recommendations: [
+                "Exceeds hiring requirements.",
+              ],
+              daysAgo: 29,
+            },
+          ];
+
+          for (const s of sessionsData) {
+            const createdAt = new Date();
+            createdAt.setDate(createdAt.getDate() - s.daysAgo);
+
+            const session = await prisma.interviewSession.create({
+              data: {
+                userId: demoUser.id,
+                title: s.title,
+                jobDescription: `Target company: ${s.company}. ${s.desc}`,
+                status: "COMPLETED",
+                createdAt,
+                updatedAt: createdAt,
+              },
+            });
+
+            await prisma.aIReport.create({
+              data: {
+                sessionId: session.id,
+                overallScore: s.score,
+                communicationScore: s.comm,
+                technicalScore: s.tech,
+                overallFeedback: s.feedback,
+                recommendations: s.recommendations,
+                createdAt,
+              },
+            });
+
+            await prisma.recruiterReport.create({
+              data: {
+                sessionId: session.id,
+                isPublic: true,
+                recruiterNotes: `Simulated HR check for ${s.title} candidates. Pre-vetted at ${s.score}% overall.`,
+                createdAt,
+              },
+            });
+
+            // Seed Posture Logs
+            await prisma.postureLog.createMany({
+              data: [
+                { sessionId: session.id, timestampSeconds: 5, headTiltAngle: 2.1, shoulderSlopeAngle: 1.8, isSlumping: false, confidenceScore: 0.95, createdAt },
+                { sessionId: session.id, timestampSeconds: 30, headTiltAngle: 3.5, shoulderSlopeAngle: 2.1, isSlumping: false, confidenceScore: 0.94, createdAt },
+                { sessionId: session.id, timestampSeconds: 60, headTiltAngle: 1.8, shoulderSlopeAngle: 1.5, isSlumping: false, confidenceScore: 0.96, createdAt },
+                { sessionId: session.id, timestampSeconds: 120, headTiltAngle: 4.2, shoulderSlopeAngle: 3.8, isSlumping: s.score < 80, confidenceScore: 0.92, createdAt },
+              ],
+            });
+
+            // Seed Facial Logs
+            await prisma.facialLog.createMany({
+              data: [
+                { sessionId: session.id, timestampSeconds: 5, eyeContactScore: s.comm, smileIntensity: 0.4, primaryEmotion: "happy", blinkingRate: 0.2, createdAt },
+                { sessionId: session.id, timestampSeconds: 30, eyeContactScore: s.comm + 2, smileIntensity: 0.3, primaryEmotion: "neutral", blinkingRate: 0.15, createdAt },
+                { sessionId: session.id, timestampSeconds: 60, eyeContactScore: s.comm - 3, smileIntensity: 0.5, primaryEmotion: "happy", blinkingRate: 0.22, createdAt },
+                { sessionId: session.id, timestampSeconds: 120, eyeContactScore: s.comm + 1, smileIntensity: 0.2, primaryEmotion: "neutral", blinkingRate: 0.18, createdAt },
+              ],
+            });
+
+            // Seed Speech Logs
+            await prisma.speechLog.createMany({
+              data: [
+                {
+                  sessionId: session.id,
+                  transcription: "We scaled our real-time database syncing layers using a highly robust message broker that synchronized endpoints efficiently.",
+                  speechRateWPM: 135,
+                  fillerWords: { like: s.score < 80 ? 3 : 1, um: s.score < 80 ? 2 : 0, so: 1 },
+                  overallConfidence: 0.9,
+                  createdAt,
+                },
+              ],
+            });
+          }
+
+          logger.info(`Successfully seeded demo dataset for user: ${demoUser.email}`);
+        }
+      }
+
       const user = await prisma.user.findUnique({
         where: { email },
       });
@@ -477,6 +717,7 @@ export class AuthController {
           avatarUrl: true,
           emailVerified: true,
           createdAt: true,
+          subscription: true,
           auditLogs: {
             orderBy: { createdAt: "desc" },
             take: 10,
@@ -501,12 +742,45 @@ export class AuthController {
           createdAt: new Date(),
           auditLogs: [],
           userSessions: [],
+          subscription: {
+            id: "fallback-sub-id",
+            userId: req.user.id,
+            tier: "FREE",
+            stripeCustomerId: null,
+            stripeSubscriptionId: null,
+            currentPeriodEnd: null,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          } as any,
         };
       }
 
+      // Count the user's interviews created in the current calendar month
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+
+      const interviewCount = await prisma.interviewSession.count({
+        where: {
+          userId: req.user.id,
+          createdAt: {
+            gte: startOfMonth,
+          },
+        },
+      });
+
       res.status(200).json({
         success: true,
-        data: user,
+        data: {
+          ...user,
+          subscription: user.subscription || {
+            tier: "FREE",
+            currentPeriodEnd: null,
+            stripeCustomerId: null,
+            stripeSubscriptionId: null,
+          },
+          interviewsUsed: interviewCount,
+        },
       });
     } catch (error) {
       next(error);

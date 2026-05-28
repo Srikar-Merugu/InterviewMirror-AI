@@ -6,6 +6,7 @@ import { rateLimit } from "express-rate-limit";
 import { errorHandler } from "./middlewares/error.middleware";
 import routes from "./routes/session.route";
 import { authRouter } from "./routes/auth.route";
+import { subscriptionRouter } from "./routes/subscription.route";
 
 const app = express();
 
@@ -83,6 +84,7 @@ app.get("/health", (req, res) => {
 // API Routes namespace mapping
 app.use("/api/v1", routes);
 app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/subscription", subscriptionRouter);
 
 // Centralized error handling middleware
 app.use(errorHandler);

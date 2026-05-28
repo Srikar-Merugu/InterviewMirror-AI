@@ -28,6 +28,7 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [subscriptionTier, setSubscriptionTier] = useState<string>("FREE");
 
   // Sync theme with local storage & fetch dynamic user details on mount
   useEffect(() => {
@@ -46,13 +47,16 @@ export default function SettingsPage() {
           const decoded = JSON.parse(window.atob(token));
           setProfileName(decoded.name || decoded.email?.split("@")[0] || "Candidate User");
           setProfileEmail(decoded.email || "candidate@interviewmirror.com");
+          setSubscriptionTier(decoded.subscription?.tier || "FREE");
         } else {
           setProfileName("Candidate User");
           setProfileEmail("candidate@interviewmirror.com");
+          setSubscriptionTier("FREE");
         }
       } catch (e) {
         setProfileName("Candidate User");
         setProfileEmail("candidate@interviewmirror.com");
+        setSubscriptionTier("FREE");
       }
     };
 
@@ -76,6 +80,7 @@ export default function SettingsPage() {
             const user = resJson.data;
             setProfileName(user.name || "");
             setProfileEmail(user.email || "");
+            setSubscriptionTier(user.subscription?.tier || "FREE");
           } else {
             fallbackFromToken();
           }
@@ -346,25 +351,66 @@ export default function SettingsPage() {
                 Plan Name
               </div>
               <div className="text-lg font-heading font-black text-emerald-400 mt-1">
-                Professional Candidate
+                {subscriptionTier === "FREE"
+                  ? "Mock Sandbox"
+                  : subscriptionTier === "PRO"
+                    ? "Professional Candidate"
+                    : "Recruiter Enterprise"}
               </div>
               <div className="text-xs text-zinc-400 mt-0.5">
-                $15 / month (Billed annually)
+                {subscriptionTier === "FREE"
+                  ? "$0 / month (Limited Access)"
+                  : subscriptionTier === "PRO"
+                    ? "$19 / month (30 runs/mo)"
+                    : "$49 / month (Unlimited)"}
               </div>
             </div>
 
             <div className="space-y-2">
-              <div className="flex items-center space-x-2 text-xs text-zinc-300">
-                <Check className="w-4 h-4 text-emerald-400" />
-                <span>Unlimited AI Mock sessions</span>
-              </div>
-              <div className="flex items-center space-x-2 text-xs text-zinc-300">
-                <Check className="w-4 h-4 text-emerald-400" />
-                <span>Recruiter links sharing enabled</span>
-              </div>
+              {subscriptionTier === "FREE" ? (
+                <>
+                  <div className="flex items-center space-x-2 text-xs text-zinc-400">
+                    <Check className="w-4 h-4 text-zinc-500" />
+                    <span>5 Mock interviews / month limit</span>
+                  </div>
+                  <div className="flex items-center space-x-2 text-xs text-zinc-400">
+                    <Check className="w-4 h-4 text-zinc-500" />
+                    <span>Standard dashboard analytics</span>
+                  </div>
+                </>
+              ) : subscriptionTier === "PRO" ? (
+                <>
+                  <div className="flex items-center space-x-2 text-xs text-zinc-300">
+                    <Check className="w-4 h-4 text-emerald-400" />
+                    <span>30 Mock interviews / month limit</span>
+                  </div>
+                  <div className="flex items-center space-x-2 text-xs text-zinc-300">
+                    <Check className="w-4 h-4 text-emerald-400" />
+                    <span>Iris and slumping telemetry</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center space-x-2 text-xs text-zinc-300">
+                    <Check className="w-4 h-4 text-emerald-400" />
+                    <span>Unlimited Mock interviews</span>
+                  </div>
+                  <div className="flex items-center space-x-2 text-xs text-zinc-300">
+                    <Check className="w-4 h-4 text-emerald-400" />
+                    <span>All Recruiter analytics unlocked</span>
+                  </div>
+                </>
+              )}
             </div>
 
-            <button className="w-full bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-200 py-2 rounded-lg text-xs font-semibold cursor-pointer transition-colors">
+            <button
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  window.location.href = "/pricing";
+                }
+              }}
+              className="w-full bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-200 py-2 rounded-lg text-xs font-semibold cursor-pointer transition-colors"
+            >
               Manage billing parameters
             </button>
           </motion.div>
