@@ -87,59 +87,78 @@ export default function OnboardingPlanPage() {
     setLoading(true);
     setError(null);
 
+    const isDev =
+      typeof window !== "undefined" &&
+      (window.location.port === "3000" ||
+       window.location.hostname === "localhost" ||
+       window.location.hostname === "127.0.0.1");
+    const apiBase =
+      process.env.NEXT_PUBLIC_API_URL ||
+      (isDev ? `http://${window.location.hostname}:5001` : "");
+
     try {
       if (selected === "FREE") {
         // Free plan: call sandbox upgrade endpoint to set tier in token
-        const res = await fetch("/api/v1/subscription/sandbox-upgrade", {
+        const res = await fetch(`${apiBase}/api/v1/subscription/sandbox-upgrade`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
           body: JSON.stringify({ tier: "FREE" }),
         });
-        if (!res.ok) throw new Error("Failed to activate free plan");
-        
-        // Update cookies locally to sync client middleware immediately
-        const fakeToken = btoa(
-          JSON.stringify({
-            tier: "FREE",
-          })
-        );
-        document.cookie = `access_token=${fakeToken}; path=/; max-age=900; SameSite=Lax`;
-        
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.message || "Failed to activate free plan");
+        }
+        const data = await res.json();
+
+        // Store real tokens from the backend response
+        if (data.accessToken) {
+          document.cookie = `access_token=${data.accessToken}; path=/; max-age=900; SameSite=Lax`;
+        }
+        if (data.refreshToken) {
+          document.cookie = `refresh_token=${data.refreshToken}; path=/; max-age=604800; SameSite=Lax`;
+        }
+
         await refreshSubscription();
         router.replace("/dashboard/home");
       } else {
-        // Paid plan: initiate Stripe checkout
+        // Paid plan: map PREMIUM → ENTERPRISE for backend, then initiate Stripe checkout
         const mappedTier = selected === "PREMIUM" ? "ENTERPRISE" : selected;
-        const res = await fetch("/api/v1/subscription/checkout", {
+        const res = await fetch(`${apiBase}/api/v1/subscription/checkout`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
           body: JSON.stringify({ tier: mappedTier }),
         });
-        if (!res.ok) throw new Error("Failed to initiate checkout");
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.message || "Failed to initiate checkout");
+        }
         const data = await res.json();
-        
+
         if (data.url && data.mode === "stripe") {
           window.location.href = data.url;
         } else if (data.mode === "sandbox") {
           // Stripe credentials missing - execute simulated sandbox checkout directly
-          const upgradeRes = await fetch("/api/v1/subscription/sandbox-upgrade", {
+          const upgradeRes = await fetch(`${apiBase}/api/v1/subscription/sandbox-upgrade`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             credentials: "include",
             body: JSON.stringify({ tier: mappedTier }),
           });
-          if (!upgradeRes.ok) throw new Error("Failed simulated checkout activation");
+          if (!upgradeRes.ok) {
+            const errData = await upgradeRes.json().catch(() => ({}));
+            throw new Error(errData.message || "Failed simulated checkout activation");
+          }
           const upgradeData = await upgradeRes.json();
-          
+
           if (upgradeData.accessToken) {
             document.cookie = `access_token=${upgradeData.accessToken}; path=/; max-age=900; SameSite=Lax`;
           }
           if (upgradeData.refreshToken) {
             document.cookie = `refresh_token=${upgradeData.refreshToken}; path=/; max-age=604800; SameSite=Lax`;
           }
-          
+
           await refreshSubscription();
           router.replace("/dashboard/home");
         } else {

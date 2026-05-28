@@ -53,22 +53,24 @@ export default function GitHubOAuthPage() {
         throw new Error(result.message || "GitHub OAuth authentication failed");
       }
 
-      // Sync cookies & local storage
+      // Sync real JWT cookies & local storage from backend response
       if (typeof window !== "undefined") {
-        window.localStorage.setItem("mock_auth_token", "mock-user-token");
-        const fakeToken = btoa(
-          JSON.stringify({
-            id: result.data?.id,
-            email: result.data?.email,
-            role: result.data?.role,
-            name: result.data?.name,
-          })
-        );
-        document.cookie = `access_token=${fakeToken}; path=/; max-age=900; SameSite=Lax`;
-        document.cookie = `refresh_token=mock-refresh-token; path=/; max-age=604800; SameSite=Lax`;
+        window.localStorage.setItem("mock_auth_token", result.accessToken || "mock-user-token");
+        if (result.accessToken) {
+          document.cookie = `access_token=${result.accessToken}; path=/; max-age=900; SameSite=Lax`;
+        }
+        if (result.refreshToken) {
+          document.cookie = `refresh_token=${result.refreshToken}; path=/; max-age=604800; SameSite=Lax`;
+        }
       }
 
-      router.push("/dashboard/home");
+      // Route based on whether user has a subscription tier
+      const userTier = result.data?.subscription?.tier;
+      if (!userTier) {
+        router.push("/onboarding/plan");
+      } else {
+        router.push("/dashboard/home");
+      }
     } catch (err: any) {
       setError(err.message || "Network error. Make sure backend is running.");
     } finally {

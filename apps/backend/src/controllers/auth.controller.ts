@@ -463,11 +463,14 @@ export class AuthController {
       res.status(200).json({
         success: true,
         message: "Sign in successful.",
+        accessToken,
+        refreshToken,
         data: {
           id: user.id,
           email: user.email,
           name: user.name,
           role: user.role,
+          subscription: subscription || null,
         },
       });
     } catch (error) {
@@ -699,11 +702,14 @@ export class AuthController {
       res.status(200).json({
         success: true,
         message: "OAuth sign in successful.",
+        accessToken,
+        refreshToken,
         data: {
           id: user.id,
           email: user.email,
           name: user.name,
           role: user.role,
+          subscription: subscription || null,
         },
       });
     } catch (error) {

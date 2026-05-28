@@ -9,40 +9,29 @@ export function middleware(request: NextRequest) {
   const isAuthRoute = pathname.startsWith("/auth");
   const isOnboardingRoute = pathname.startsWith("/onboarding");
 
-  // Decodes JWT payload and checks expiration
-  const isTokenExpired = (token: string): boolean => {
+  /**
+   * Decode JWT or base64 JSON token payload.
+   * Real JWTs: header.payload.signature (3 parts, decode part[1])
+   * Fake signup tokens: single base64 blob (decode the whole token)
+   */
+  const getTokenPayload = (token: string): any => {
     try {
-      const payloadPart = token.split(".")[1];
-      if (!payloadPart) return true;
+      const parts = token.split(".");
+      let payloadBase64: string;
 
-      // Handle Base64Url padding
-      const base64 = payloadPart.replace(/-/g, "+").replace(/_/g, "/");
+      if (parts.length === 3) {
+        // Real JWT — decode the payload part (index 1)
+        payloadBase64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+      } else {
+        // Fake base64 JSON token (signup flow)
+        payloadBase64 = token.replace(/-/g, "+").replace(/_/g, "/");
+      }
+
       const jsonPayload = decodeURIComponent(
-        atob(base64)
+        atob(payloadBase64)
           .split("")
           .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
           .join(""),
-      );
-
-      const payload = JSON.parse(jsonPayload);
-      if (!payload.exp) return false;
-      return Date.now() >= payload.exp * 1000;
-    } catch {
-      return true;
-    }
-  };
-
-  // Decode token to extract tier claim
-  const getTokenPayload = (token: string): any => {
-    try {
-      const payloadPart = token.split('.')[1];
-      if (!payloadPart) return {};
-      const base64 = payloadPart.replace(/-/g, '+').replace(/_/g, '/');
-      const jsonPayload = decodeURIComponent(
-        atob(base64)
-          .split('')
-          .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-          .join(''),
       );
       return JSON.parse(jsonPayload);
     } catch {
@@ -50,6 +39,22 @@ export function middleware(request: NextRequest) {
     }
   };
 
+  /**
+   * Check if a token is expired.
+   * - Real JWTs with an `exp` claim: compare against current time.
+   * - Tokens without `exp` (signup fake tokens): treat as NOT expired.
+   */
+  const isTokenExpired = (token: string): boolean => {
+    try {
+      const payload = getTokenPayload(token);
+      if (!payload.exp) return false; // no exp = treat as valid
+      return Date.now() >= payload.exp * 1000;
+    } catch {
+      return false; // never block on decode error
+    }
+  };
+
+  // ── Dashboard: require valid token ──────────────────────────────────────────
   if (isDashboardRoute) {
     if (!accessToken || isTokenExpired(accessToken)) {
       const redirectUrl = request.nextUrl.clone();
@@ -58,14 +63,15 @@ export function middleware(request: NextRequest) {
     }
     const payload = getTokenPayload(accessToken);
     const tier = payload.tier;
-    // Exclude demo user from tier gating
-    if (payload.email !== 'demo@interviewmirror.ai' && !tier) {
+    // Demo account bypasses all plan gating
+    if (payload.email !== "demo@interviewmirror.ai" && !tier) {
       const redirectUrl = request.nextUrl.clone();
-      redirectUrl.pathname = '/onboarding/plan';
+      redirectUrl.pathname = "/onboarding/plan";
       return NextResponse.redirect(redirectUrl);
     }
   }
 
+  // ── Onboarding: require a token, block if they already have a plan ──────────
   if (isOnboardingRoute) {
     if (!accessToken || isTokenExpired(accessToken)) {
       const redirectUrl = request.nextUrl.clone();
@@ -74,15 +80,23 @@ export function middleware(request: NextRequest) {
     }
     const payload = getTokenPayload(accessToken);
     const tier = payload.tier;
-    if (tier === 'FREE' || tier === 'PRO' || tier === 'ENTERPRISE') {
+    // If they already picked a plan, send to dashboard
+    if (tier === "FREE" || tier === "PRO" || tier === "ENTERPRISE") {
       const redirectUrl = request.nextUrl.clone();
-      redirectUrl.pathname = '/dashboard/home';
+      redirectUrl.pathname = "/dashboard/home";
       return NextResponse.redirect(redirectUrl);
     }
   }
 
+  // ── Auth pages: redirect logged-in users to dashboard ───────────────────────
   if (isAuthRoute) {
     if (accessToken && !isTokenExpired(accessToken)) {
+      const payload = getTokenPayload(accessToken);
+      const tier = payload.tier;
+      // If logged in with no plan yet, let them through to onboarding
+      if (!tier) {
+        return NextResponse.next();
+      }
       const redirectUrl = request.nextUrl.clone();
       redirectUrl.pathname = "/dashboard/home";
       return NextResponse.redirect(redirectUrl);

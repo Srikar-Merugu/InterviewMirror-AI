@@ -9,6 +9,16 @@ const nextConfig = {
     ignoreDuringBuilds: false,
   },
   output: "standalone",
+  async rewrites() {
+    const apiBase =
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+    return [
+      {
+        source: "/api/v1/:path*",
+        destination: `${apiBase}/api/v1/:path*`,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

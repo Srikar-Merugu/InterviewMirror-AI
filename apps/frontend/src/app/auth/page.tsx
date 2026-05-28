@@ -90,45 +90,36 @@ export default function AuthPage() {
             "Password reset verification link has been dispatched.",
         );
       } else if (authMode === "signin") {
-        // If user successfully logged in, set local storage and fallback cookies
+        // If user successfully logged in, set local storage and real cookies
         if (typeof window !== "undefined") {
-          window.localStorage.setItem("mock_auth_token", "mock-user-token");
-          // Also set client side fallback cookies to ensure Next.js middleware is 100% resilient
+          window.localStorage.setItem("mock_auth_token", result.accessToken || "mock-user-token");
+          
+          if (result.accessToken) {
+            document.cookie = `access_token=${result.accessToken}; path=/; max-age=900; SameSite=Lax`;
+          }
+          if (result.refreshToken) {
+            document.cookie = `refresh_token=${result.refreshToken}; path=/; max-age=604800; SameSite=Lax`;
+          }
+        }
+        router.push("/dashboard/home");
+      } else if (authMode === "signup") {
+        // Successful signup: redirect to onboarding plan selection
+        if (typeof window !== "undefined") {
+          // New signups don't have a plan chosen yet, so we don't set a tier in cookie
           const fakeToken = btoa(
             JSON.stringify({
               id: result.data?.id,
               email: result.data?.email,
               role: result.data?.role,
               name: result.data?.name || name || result.data?.email?.split("@")[0] || "Mock Candidate",
-            }),
+            })
           );
           document.cookie = `access_token=${fakeToken}; path=/; max-age=900; SameSite=Lax`;
           document.cookie = `refresh_token=mock-refresh-token; path=/; max-age=604800; SameSite=Lax`;
         }
-        router.push("/dashboard/home");
-        } else if (authMode === "signup") {
-          // Successful signup: set token and redirect to onboarding plan selection
-          if (typeof window !== "undefined") {
-            const fakeToken = btoa(
-              JSON.stringify({
-                id: result.data?.id,
-                email: result.data?.email,
-                role: result.data?.role,
-                name: result.data?.name || name || result.data?.email?.split("@")[0] || "Mock Candidate",
-                tier: "FREE", // initial tier is FREE
-              })
-            );
-            document.cookie = `access_token=${fakeToken}; path=/; max-age=900; SameSite=Lax`;
-            document.cookie = `refresh_token=mock-refresh-token; path=/; max-age=604800; SameSite=Lax`;
-          }
-          // Direct user to onboarding plan selection screen
-          router.push("/onboarding/plan");
-        } else {
-          // Toggle to signin mode on successful login
-          setAuthMode("signin");
-          setError(null);
-          alert("Account registered successfully! You can now log in.");
-        }
+        // Direct user to onboarding plan selection screen
+        router.push("/onboarding/plan");
+      }
     } catch (err: any) {
       setError(err.message || "An unexpected authentication error occurred.");
     } finally {
