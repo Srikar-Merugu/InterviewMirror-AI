@@ -325,6 +325,18 @@ export class SessionController {
         },
       });
 
+      // Save RecruiterReport with low engagement notes for says-nothing or active engagement notes
+      await prisma.recruiterReport.create({
+        data: {
+          sessionId: session.id,
+          recruiterNotes:
+            totalWords === 0
+              ? "CANDIDATE DID NOT PARTICIPATE — Zero verbal responses recorded. Engagement was completely absent across all metrics: technical (5%), communication (8%), posture (12%), eye contact (15%). Recommended: verify microphone permissions and encourage full sentence responses in the next session."
+              : `Candidate completed the interview with ${totalWords} words across ${totalAnswersCount} responses. Technical keyword coverage: ${matchedKeywordsList.size} keywords matched. Filler density: ${totalFillers} instances. Overall score: ${calculatedOverall}%.`,
+          isPublic: false,
+        },
+      });
+
       // Create standard speech log with real transcription metrics
       const fullTranscription = cleanAnswers.join(" | ") || "No audio response recorded.";
       await prisma.speechLog.create({

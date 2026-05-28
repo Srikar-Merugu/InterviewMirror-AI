@@ -16,7 +16,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { GLASSMORPHISM_STYLES, INTERACTION_CLASSES } from "@interviewmirror/ui";
-import { getAuthHeaders } from "../../../utils/auth";
+import { getAuthHeaders, getCookie } from "../../../utils/auth";
 
 export default function SettingsPage() {
   const [theme, setTheme] = useState<"dark" | "light">("dark");
@@ -39,6 +39,23 @@ export default function SettingsPage() {
       setTheme(storedTheme || "dark");
     }
 
+    const fallbackFromToken = () => {
+      try {
+        const token = getCookie("access_token");
+        if (token) {
+          const decoded = JSON.parse(window.atob(token));
+          setProfileName(decoded.name || decoded.email?.split("@")[0] || "Candidate User");
+          setProfileEmail(decoded.email || "candidate@interviewmirror.com");
+        } else {
+          setProfileName("Candidate User");
+          setProfileEmail("candidate@interviewmirror.com");
+        }
+      } catch (e) {
+        setProfileName("Candidate User");
+        setProfileEmail("candidate@interviewmirror.com");
+      }
+    };
+
     const fetchProfile = async () => {
       try {
         const isDev =
@@ -59,10 +76,15 @@ export default function SettingsPage() {
             const user = resJson.data;
             setProfileName(user.name || "");
             setProfileEmail(user.email || "");
+          } else {
+            fallbackFromToken();
           }
+        } else {
+          fallbackFromToken();
         }
       } catch (err) {
         console.error("Failed to load registered user details:", err);
+        fallbackFromToken();
       }
     };
 

@@ -69,9 +69,12 @@ export const useInterviewStore = create<InterviewState>()(
           const backendUrl = process.env.NEXT_PUBLIC_API_URL || (isDev ? `http://${window.location.hostname}:5001` : "");
 
           // Initialize Socket.IO connection
+          // Use both polling and websocket for Vercel serverless compatibility
           const socket = io(backendUrl, {
             auth: { token },
-            transports: ["websocket"],
+            transports: ["polling", "websocket"],
+            upgrade: true,
+            rememberUpgrade: true,
           });
 
           socket.on("connect", () => {

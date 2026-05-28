@@ -183,7 +183,7 @@ export default function ReportDetailPage() {
             posture = hasParticipated ? 85 : 0;
           }
 
-          // Calculate eye contact from facialLogs
+          // Calculate eye contact directly from facialLogs (DB-backed gaze data)
           let averageEyeFocus = 0;
           const facialLogs = result.data.facialLogs || [];
           if (facialLogs.length > 0) {
@@ -192,13 +192,6 @@ export default function ReportDetailPage() {
               0,
             );
             averageEyeFocus = Math.round((totalGaze / facialLogs.length) * 100);
-          } else if (postureLogs.length > 0) {
-            // fallback if only postureLogs are present
-            const totalGaze = postureLogs.reduce(
-              (sum: number, p: any) => sum + (p.confidenceScore || 0),
-              0,
-            );
-            averageEyeFocus = Math.round((totalGaze / postureLogs.length) * 100);
           } else {
             averageEyeFocus = hasParticipated ? 85 : 0;
           }
@@ -427,7 +420,7 @@ export default function ReportDetailPage() {
   return (
     <div className="space-y-6 relative overflow-hidden">
       {/* Upper navigation header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 no-print">
         <Link
           href="/dashboard/home"
           className="inline-flex items-center space-x-1.5 text-xs text-zinc-400 hover:text-zinc-200 cursor-pointer transition-colors"
@@ -473,7 +466,7 @@ export default function ReportDetailPage() {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-indigo-950/20 border border-indigo-900/30 p-3 rounded-lg flex items-center justify-between text-xs text-indigo-400"
+          className="bg-indigo-950/20 border border-indigo-900/30 p-3 rounded-lg flex items-center justify-between text-xs text-indigo-400 no-print"
         >
           <div className="flex items-center space-x-2">
             <ShieldCheck className="w-4 h-4" />

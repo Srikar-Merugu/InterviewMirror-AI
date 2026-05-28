@@ -99,6 +99,7 @@ export default function AuthPage() {
               id: result.data?.id,
               email: result.data?.email,
               role: result.data?.role,
+              name: result.data?.name || name || result.data?.email?.split("@")[0] || "Mock Candidate",
             }),
           );
           document.cookie = `access_token=${fakeToken}; path=/; max-age=900; SameSite=Lax`;

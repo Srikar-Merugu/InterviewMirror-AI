@@ -142,3 +142,35 @@ html:not(.dark) .radial-glowing-effect {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(120, 120, 120, 0.3);
 }
+
+/* Print Optimization */
+@media print {
+  /* Force backgrounds and colors to render in PDFs */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  /* Hide interactive navigation, buttons and share banners */
+  .no-print,
+  aside,
+  header,
+  nav,
+  button,
+  a {
+    display: none !important;
+  }
+
+  /* Ensure the container is positioned well for print */
+  body {
+    background-color: #09090b !important;
+    color: #f4f4f5 !important;
+  }
+
+  html:not(.dark) body {
+    background-color: #f8fafc !important;
+    color: #0f172a !important;
+  }
+}
+
