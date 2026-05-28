@@ -103,23 +103,11 @@ export default function AuthPage() {
         }
         router.push("/dashboard/home");
       } else if (authMode === "signup") {
-        // Successful signup: redirect to onboarding plan selection
-        if (typeof window !== "undefined") {
-          // New signups don't have a plan chosen yet, so we don't set a tier in cookie
-          const fakeToken = btoa(
-            JSON.stringify({
-              id: result.data?.id,
-              email: result.data?.email,
-              role: result.data?.role,
-              name: result.data?.name || name || result.data?.email?.split("@")[0] || "Mock Candidate",
-            })
-          );
-          document.cookie = `access_token=${fakeToken}; path=/; max-age=900; SameSite=Lax`;
-          document.cookie = `refresh_token=mock-refresh-token; path=/; max-age=604800; SameSite=Lax`;
-          window.localStorage.setItem("mock_auth_token", fakeToken);
-        }
-        // Direct user to onboarding plan selection screen
-        router.push("/onboarding/plan");
+        // Successful signup: show success message and switch to signin
+        setAuthMode("signin");
+        setPassword("");
+        setError(null);
+        alert("Account created successfully! Please sign in with your credentials.");
       }
     } catch (err: any) {
       setError(err.message || "An unexpected authentication error occurred.");

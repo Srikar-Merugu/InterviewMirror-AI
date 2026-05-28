@@ -97,17 +97,23 @@ export default function OnboardingPlanPage() {
       (isDev ? `http://${window.location.hostname}:5001` : "");
 
     try {
+      const token = typeof window !== "undefined" ? window.localStorage.getItem("mock_auth_token") : null;
+      const authHeaders: Record<string, string> = { "Content-Type": "application/json" };
+      if (token) {
+        authHeaders["Authorization"] = `Bearer ${token}`;
+      }
+
       if (selected === "FREE") {
         // Free plan: call sandbox upgrade endpoint to set tier in token
         const res = await fetch(`${apiBase}/api/v1/subscription/sandbox-upgrade`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: authHeaders,
           credentials: "include",
           body: JSON.stringify({ tier: "FREE" }),
         });
         if (!res.ok) {
           const errData = await res.json().catch(() => ({}));
-          throw new Error(errData.message || "Failed to activate free plan");
+          throw new Error(errData.error?.message || errData.message || "Failed to activate free plan");
         }
         const data = await res.json();
 
@@ -127,13 +133,13 @@ export default function OnboardingPlanPage() {
         const mappedTier = selected === "PREMIUM" ? "ENTERPRISE" : selected;
         const res = await fetch(`${apiBase}/api/v1/subscription/checkout`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: authHeaders,
           credentials: "include",
           body: JSON.stringify({ tier: mappedTier }),
         });
         if (!res.ok) {
           const errData = await res.json().catch(() => ({}));
-          throw new Error(errData.message || "Failed to initiate checkout");
+          throw new Error(errData.error?.message || errData.message || "Failed to initiate checkout");
         }
         const data = await res.json();
 
@@ -143,13 +149,13 @@ export default function OnboardingPlanPage() {
           // Stripe credentials missing - execute simulated sandbox checkout directly
           const upgradeRes = await fetch(`${apiBase}/api/v1/subscription/sandbox-upgrade`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: authHeaders,
             credentials: "include",
             body: JSON.stringify({ tier: mappedTier }),
           });
           if (!upgradeRes.ok) {
             const errData = await upgradeRes.json().catch(() => ({}));
-            throw new Error(errData.message || "Failed simulated checkout activation");
+            throw new Error(errData.error?.message || errData.message || "Failed simulated checkout activation");
           }
           const upgradeData = await upgradeRes.json();
 
