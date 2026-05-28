@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { getAuthHeaders, getCookie } from '@/utils/auth';
 
 // Define the shape of subscription data returned by the backend
 interface SubscriptionInfo {
@@ -41,11 +42,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
       const apiBase = process.env.NEXT_PUBLIC_API_URL || (isDev ? `http://${window.location.hostname}:5001` : "");
 
       const res = await fetch(`${apiBase}/api/v1/auth/me`, {
-        headers: {
-          ...((typeof window !== "undefined" && window.localStorage.getItem("mock_auth_token"))
-            ? { "Authorization": `Bearer ${window.localStorage.getItem("mock_auth_token")}` }
-            : {})
-        },
+        headers: getAuthHeaders(),
         credentials: 'include',
       });
       if (!res.ok) throw new Error('Failed to fetch subscription data');
@@ -67,13 +64,6 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
       console.error('[SubscriptionContext] error fetching subscription:', err);
       // Fallback: decode tier from cookie token when API is unavailable
       try {
-        const getCookie = (name: string) => {
-          if (typeof document === "undefined") return null;
-          const value = `; ${document.cookie}`;
-          const parts = value.split(`; ${name}=`);
-          if (parts.length === 2) return parts.pop()?.split(';').shift();
-          return null;
-        };
         const token = getCookie("access_token");
         if (token) {
           let payload: any = {};
@@ -115,13 +105,6 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
   const canAccessFeature = (featureKey: string): boolean => {
     if (!tier) return false;
     // Demo user bypasses everything
-    const getCookie = (name: string) => {
-      if (typeof document === "undefined") return null;
-      const value = `; ${document.cookie}`;
-      const parts = value.split(`; ${name}=`);
-      if (parts.length === 2) return parts.pop()?.split(';').shift();
-      return null;
-    };
     try {
       const token = getCookie("access_token");
       if (token) {

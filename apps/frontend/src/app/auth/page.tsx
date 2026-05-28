@@ -95,10 +95,10 @@ export default function AuthPage() {
           window.localStorage.setItem("mock_auth_token", result.accessToken || "mock-user-token");
           
           if (result.accessToken) {
-            document.cookie = `access_token=${result.accessToken}; path=/; max-age=900; SameSite=Lax`;
+            document.cookie = `access_token=${result.accessToken}; path=/; max-age=900; SameSite=Lax; Secure`;
           }
           if (result.refreshToken) {
-            document.cookie = `refresh_token=${result.refreshToken}; path=/; max-age=604800; SameSite=Lax`;
+            document.cookie = `refresh_token=${result.refreshToken}; path=/; max-age=604800; SameSite=Lax; Secure`;
           }
         }
         router.push("/dashboard/home");

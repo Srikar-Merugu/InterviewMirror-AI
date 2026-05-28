@@ -1,10 +1,18 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, Zap, Crown, Sparkles, ArrowRight, Lock } from "lucide-react";
+import { Check, Zap, Crown, Sparkles, ArrowRight, Lock, CheckCircle2, XCircle } from "lucide-react";
 import { useSubscription } from "@/contexts/SubscriptionContext";
+import { getAuthHeaders, getCookie } from "@/utils/auth";
+
+type ToastType = "success" | "error" | null;
+
+interface ToastState {
+  type: ToastType;
+  message: string;
+}
 
 const PLANS = [
   {
@@ -78,105 +86,133 @@ const PLANS = [
 
 export default function OnboardingPlanPage() {
   const router = useRouter();
-  const { refreshSubscription } = useSubscription();
+  const { refreshSubscription, tier: currentTier } = useSubscription();
   const [selected, setSelected] = useState("PRO");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<ToastState>({ type: null, message: "" });
+  const [loadingLabel, setLoadingLabel] = useState("");
+
+  // Auto-dismiss toast after 4 seconds
+  useEffect(() => {
+    if (!toast.type) return;
+    const t = setTimeout(() => setToast({ type: null, message: "" }), 4000);
+    return () => clearTimeout(t);
+  }, [toast]);
+
+  // If user already has a plan, redirect to dashboard
+  useEffect(() => {
+    if (currentTier === "FREE" || currentTier === "PRO" || currentTier === "PREMIUM") {
+      router.replace("/dashboard/home");
+    }
+  }, [currentTier, router]);
+
+  const apiBase = (() => {
+    if (typeof window === "undefined") return "";
+    const isDev =
+      window.location.port === "3000" ||
+      window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1";
+    return process.env.NEXT_PUBLIC_API_URL || (isDev ? `http://${window.location.hostname}:5001` : "");
+  })();
+
+  const activatePlan = useCallback(async (tier: string): Promise<void> => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+    try {
+      const headers = getAuthHeaders();
+      const res = await fetch(`${apiBase}/api/v1/subscription/sandbox-upgrade`, {
+        method: "POST",
+        headers,
+        credentials: "include",
+        body: JSON.stringify({ tier }),
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error?.message || errData.message || `Failed to activate ${tier} plan`);
+      }
+
+      const data = await res.json();
+
+      if (data.accessToken) {
+        document.cookie = `access_token=${data.accessToken}; path=/; max-age=900; SameSite=Lax; Secure`;
+        window.localStorage.setItem("mock_auth_token", data.accessToken);
+      }
+      if (data.refreshToken) {
+        document.cookie = `refresh_token=${data.refreshToken}; path=/; max-age=604800; SameSite=Lax; Secure`;
+      }
+
+      await refreshSubscription();
+    } catch (err: any) {
+      clearTimeout(timeoutId);
+      if (err.name === "AbortError") {
+        throw new Error("Request timed out. Please try again.");
+      }
+      throw err;
+    }
+  }, [apiBase, refreshSubscription]);
 
   const handleContinue = async () => {
     setLoading(true);
     setError(null);
+    setToast({ type: null, message: "" });
 
-    const isDev =
-      typeof window !== "undefined" &&
-      (window.location.port === "3000" ||
-       window.location.hostname === "localhost" ||
-       window.location.hostname === "127.0.0.1");
-    const apiBase =
-      process.env.NEXT_PUBLIC_API_URL ||
-      (isDev ? `http://${window.location.hostname}:5001` : "");
+    if (selected === "FREE") {
+      setLoadingLabel("Activating Starter Plan...");
+    } else {
+      setLoadingLabel("Redirecting to secure checkout...");
+    }
 
     try {
-      const token = typeof window !== "undefined" ? window.localStorage.getItem("mock_auth_token") : null;
-      const authHeaders: Record<string, string> = { "Content-Type": "application/json" };
-      if (token) {
-        authHeaders["Authorization"] = `Bearer ${token}`;
-      }
-
       if (selected === "FREE") {
-        // Free plan: call sandbox upgrade endpoint to set tier in token
-        const res = await fetch(`${apiBase}/api/v1/subscription/sandbox-upgrade`, {
-          method: "POST",
-          headers: authHeaders,
-          credentials: "include",
-          body: JSON.stringify({ tier: "FREE" }),
-        });
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          throw new Error(errData.error?.message || errData.message || "Failed to activate free plan");
-        }
-        const data = await res.json();
-
-        // Store real tokens from the backend response
-        if (data.accessToken) {
-          document.cookie = `access_token=${data.accessToken}; path=/; max-age=900; SameSite=Lax`;
-          window.localStorage.setItem("mock_auth_token", data.accessToken);
-        }
-        if (data.refreshToken) {
-          document.cookie = `refresh_token=${data.refreshToken}; path=/; max-age=604800; SameSite=Lax`;
-        }
-
-        await refreshSubscription();
-        router.replace("/dashboard/home");
+        await activatePlan("FREE");
+        setToast({ type: "success", message: "Starter Plan Activated Successfully — Your AI interview workspace is ready." });
+        // Full navigation ensures cookies are settled before middleware checks them
+        setTimeout(() => { window.location.href = "/dashboard/home"; }, 800);
       } else {
-        // Paid plan: map PREMIUM → ENTERPRISE for backend, then initiate Stripe checkout
         const mappedTier = selected === "PREMIUM" ? "ENTERPRISE" : selected;
-        const res = await fetch(`${apiBase}/api/v1/subscription/checkout`, {
+        const headers = getAuthHeaders();
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+        const checkoutRes = await fetch(`${apiBase}/api/v1/subscription/checkout`, {
           method: "POST",
-          headers: authHeaders,
+          headers,
           credentials: "include",
           body: JSON.stringify({ tier: mappedTier }),
+          signal: controller.signal,
         });
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
+        clearTimeout(timeoutId);
+
+        if (!checkoutRes.ok) {
+          const errData = await checkoutRes.json().catch(() => ({}));
           throw new Error(errData.error?.message || errData.message || "Failed to initiate checkout");
         }
-        const data = await res.json();
+
+        const data = await checkoutRes.json();
 
         if (data.url && data.mode === "stripe") {
           window.location.href = data.url;
         } else if (data.mode === "sandbox") {
-          // Stripe credentials missing - execute simulated sandbox checkout directly
-          const upgradeRes = await fetch(`${apiBase}/api/v1/subscription/sandbox-upgrade`, {
-            method: "POST",
-            headers: authHeaders,
-            credentials: "include",
-            body: JSON.stringify({ tier: mappedTier }),
-          });
-          if (!upgradeRes.ok) {
-            const errData = await upgradeRes.json().catch(() => ({}));
-            throw new Error(errData.error?.message || errData.message || "Failed simulated checkout activation");
-          }
-          const upgradeData = await upgradeRes.json();
-
-          if (upgradeData.accessToken) {
-            document.cookie = `access_token=${upgradeData.accessToken}; path=/; max-age=900; SameSite=Lax`;
-            window.localStorage.setItem("mock_auth_token", upgradeData.accessToken);
-          }
-          if (upgradeData.refreshToken) {
-            document.cookie = `refresh_token=${upgradeData.refreshToken}; path=/; max-age=604800; SameSite=Lax`;
-          }
-
-          await refreshSubscription();
-          router.replace("/dashboard/home");
+          setLoadingLabel("Completing activation...");
+          await activatePlan(mappedTier);
+          setToast({ type: "success", message: `${selected} Plan Activated Successfully` });
+          setTimeout(() => { window.location.href = "/dashboard/home"; }, 800);
         } else {
           throw new Error("No checkout URL returned");
         }
       }
     } catch (err: any) {
       setError(err.message || "Something went wrong. Please try again.");
+      setToast({ type: null, message: "" });
     } finally {
       setLoading(false);
+      setLoadingLabel("");
     }
   };
 
@@ -304,9 +340,10 @@ export default function OnboardingPlanPage() {
         className="relative z-10 mt-10 flex flex-col items-center gap-4"
       >
         {error && (
-          <p className="text-red-400 text-sm bg-red-950/30 border border-red-900/40 px-4 py-2 rounded-lg">
-            {error}
-          </p>
+          <div className="flex items-center gap-2 text-red-400 text-sm bg-red-950/30 border border-red-900/40 px-4 py-2.5 rounded-lg">
+            <XCircle className="w-4 h-4 flex-shrink-0" />
+            <span>{error}</span>
+          </div>
         )}
 
         <button
@@ -315,7 +352,10 @@ export default function OnboardingPlanPage() {
           className="group flex items-center gap-2 px-8 py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-sm shadow-lg shadow-indigo-500/20 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? (
-            <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+            <>
+              <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+              <span className="text-xs">{loadingLabel || "Processing..."}</span>
+            </>
           ) : (
             <>
               {selected === "FREE" ? "Continue with Starter" : `Upgrade to ${PLANS.find((p) => p.id === selected)?.name}`}
@@ -328,6 +368,29 @@ export default function OnboardingPlanPage() {
           Secure checkout powered by Stripe • Cancel anytime
         </p>
       </motion.div>
+
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {toast.type && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 50, scale: 0.9 }}
+            className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3 rounded-xl shadow-2xl backdrop-blur-sm border text-sm font-medium ${
+              toast.type === "success"
+                ? "bg-emerald-950/80 border-emerald-800/50 text-emerald-300"
+                : "bg-red-950/80 border-red-800/50 text-red-300"
+            }`}
+          >
+            {toast.type === "success" ? (
+              <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+            ) : (
+              <XCircle className="w-5 h-5 text-red-400" />
+            )}
+            <span>{toast.message}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
