@@ -65,7 +65,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
       }
     } catch (err) {
       console.error('[SubscriptionContext] error fetching subscription:', err);
-      // Fallback decode from cookie
+      // Fallback: decode tier from cookie token when API is unavailable
       try {
         const getCookie = (name: string) => {
           if (typeof document === "undefined") return null;
@@ -76,8 +76,16 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
         };
         const token = getCookie("access_token");
         if (token) {
-          const base64 = token.split('.')[1].replace(/-/g, "+").replace(/_/g, "/");
-          const payload = JSON.parse(atob(base64));
+          let payload: any = {};
+          const tokenParts = token.split('.');
+          if (tokenParts.length === 3) {
+            // Real JWT — decode the payload part
+            const b64 = tokenParts[1].replace(/-/g, "+").replace(/_/g, "/");
+            payload = JSON.parse(atob(b64));
+          } else {
+            // Fake base64 JSON token (signup flow)
+            payload = JSON.parse(atob(token.replace(/-/g, "+").replace(/_/g, "/")));
+          }
           const rawTier = payload.tier ?? null;
           const userTier: SubscriptionInfo['tier'] = rawTier === 'ENTERPRISE' ? 'PREMIUM' : rawTier;
           setTier(userTier);

@@ -717,7 +717,6 @@ export class AuthController {
     }
   }
 
-  // Get current session candidate details
   public static async getMe(
     req: AuthenticatedRequest,
     res: Response,
@@ -728,38 +727,62 @@ export class AuthController {
         throw new UnauthorizedError("Candidate is not authenticated");
       }
 
-      // Check and execute monthly reset bounds
-      await StripeController.checkAndResetMonthlyUsage(req.user.id);
+      // Monthly reset - swallow any DB errors silently
+      try {
+        await StripeController.checkAndResetMonthlyUsage(req.user.id);
+      } catch (resetErr: any) {
+        logger.warn(`[getMe] Monthly usage reset skipped (DB may be unavailable): ${resetErr.message}`);
+      }
 
-      let user = await prisma.user.findUnique({
-        where: { id: req.user.id },
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          role: true,
-          provider: true,
-          avatarUrl: true,
-          emailVerified: true,
-          createdAt: true,
-          subscription: true,
-          auditLogs: {
-            orderBy: { createdAt: "desc" },
-            take: 10,
-          },
-          userSessions: {
-            orderBy: { createdAt: "desc" },
-            take: 5,
-          },
-        },
-      });
+      let user: any = null;
+      let interviewCount = 0;
 
+      // Try DB-backed full profile; gracefully degrade if DB is down
+      try {
+        user = await prisma.user.findUnique({
+          where: { id: req.user.id },
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            role: true,
+            provider: true,
+            avatarUrl: true,
+            emailVerified: true,
+            createdAt: true,
+            subscription: true,
+            auditLogs: {
+              orderBy: { createdAt: "desc" },
+              take: 10,
+            },
+            userSessions: {
+              orderBy: { createdAt: "desc" },
+              take: 5,
+            },
+          },
+        });
+
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0, 0, 0, 0);
+
+        interviewCount = await prisma.interviewSession.count({
+          where: {
+            userId: req.user.id,
+            createdAt: { gte: startOfMonth },
+          },
+        });
+      } catch (dbErr: any) {
+        logger.warn(`[getMe] DB unavailable, falling back to JWT claims: ${dbErr.message}`);
+      }
+
+      // Fallback: build user profile from JWT claims when DB query fails or returns null
       if (!user) {
-        // Fallback for missing user profile (e.g. mock token or oauth record synch gap)
+        const jwtTier = req.user.tier || null;
         user = {
           id: req.user.id,
           email: req.user.email,
-          name: (req.user as any).name || req.user.email.split("@")[0] || "Mock Candidate",
+          name: (req.user as any).name || req.user.email.split("@")[0] || "Candidate",
           role: req.user.role as any,
           provider: "credentials",
           avatarUrl: null,
@@ -768,38 +791,24 @@ export class AuthController {
           auditLogs: [],
           userSessions: [],
           subscription: {
-            id: "fallback-sub-id",
+            id: "jwt-fallback-sub",
             userId: req.user.id,
-            tier: "FREE",
+            tier: jwtTier || "FREE",
             stripeCustomerId: null,
             stripeSubscriptionId: null,
             currentPeriodEnd: null,
             createdAt: new Date(),
             updatedAt: new Date(),
-          } as any,
+          },
         };
       }
-
-      // Count the user's interviews created in the current calendar month
-      const startOfMonth = new Date();
-      startOfMonth.setDate(1);
-      startOfMonth.setHours(0, 0, 0, 0);
-
-      const interviewCount = await prisma.interviewSession.count({
-        where: {
-          userId: req.user.id,
-          createdAt: {
-            gte: startOfMonth,
-          },
-        },
-      });
 
       res.status(200).json({
         success: true,
         data: {
           ...user,
           subscription: user.subscription || {
-            tier: "FREE",
+            tier: req.user.tier || "FREE",
             currentPeriodEnd: null,
             stripeCustomerId: null,
             stripeSubscriptionId: null,
