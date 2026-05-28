@@ -89,6 +89,9 @@ async def analyze_video(payload: AnalysisRequest):
             "summaryScores": summary_scores,
             "hrFeedback": feedback_report,
             "behaviorTimeline": behavior_timeline,
+            "postureAnalysis": posture_logs,
+            "facialAnalysis": facial_logs,
+            "speechAnalysis": speech_logs,
             "detailedLogs": {
                 "posture": posture_logs,
                 "facial": facial_logs,

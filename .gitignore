@@ -36,6 +36,7 @@ lerna-debug.log*
 # Operating System files
 .DS_Store
 Thumbs.db
+setting.json
 
 # Database
 db.sqlite

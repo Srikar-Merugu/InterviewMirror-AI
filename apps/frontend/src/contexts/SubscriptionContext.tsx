@@ -125,8 +125,14 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
     try {
       const token = getCookie("access_token");
       if (token) {
-        const base64 = token.split('.')[1].replace(/-/g, "+").replace(/_/g, "/");
-        const payload = JSON.parse(atob(base64));
+        let payload: any = {};
+        const tokenParts = token.split('.');
+        if (tokenParts.length === 3) {
+          const base64 = tokenParts[1].replace(/-/g, "+").replace(/_/g, "/");
+          payload = JSON.parse(atob(base64));
+        } else {
+          payload = JSON.parse(atob(token.replace(/-/g, "+").replace(/_/g, "/")));
+        }
         if (payload.email === 'demo@interviewmirror.ai') return true;
       }
     } catch {}

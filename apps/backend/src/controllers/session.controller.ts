@@ -721,8 +721,9 @@ export class SessionController {
       }
 
       const analysisResult = await response.json();
-      const { postureAnalysis, facialAnalysis, speechAnalysis } =
-        analysisResult;
+      const postureAnalysis = analysisResult.postureAnalysis || analysisResult.detailedLogs?.posture;
+      const facialAnalysis = analysisResult.facialAnalysis || analysisResult.detailedLogs?.facial;
+      const speechAnalysis = analysisResult.speechAnalysis || analysisResult.detailedLogs?.speech;
 
       // Wrap prisma mutations inside transaction
       await prisma.$transaction(async (tx) => {
@@ -801,21 +802,44 @@ export class SessionController {
         const communicationScore = (eyeContactScore + fillerPenalty) / 2;
         const overallScore = (postureScore + communicationScore) / 2;
 
-        await tx.aIReport.create({
-          data: {
-            sessionId,
-            overallScore,
-            communicationScore,
-            technicalScore: 82.5, // placeholder evaluation
-            overallFeedback:
-              "The candidate maintained good shoulder alignment but slouched occasionally during stressful technical explanations. Speech rate was optimal but could benefit from reduced filler word usage like 'like' or 'um'. Eye contact scores show excellent direct engagement.",
-            recommendations: [
+        // Extract dynamic recruiter insights from FastAPI OpenRouter payload
+        const hrFeedback = analysisResult.hrFeedback || {};
+        const overallFeedback = hrFeedback.executiveSummary ||
+          "The candidate maintained good shoulder alignment but slouched occasionally during stressful technical explanations. Speech rate was optimal but could benefit from reduced filler word usage like 'like' or 'um'. Eye contact scores show excellent direct engagement.";
+
+        const recommendations = hrFeedback.roadmap
+          ? hrFeedback.roadmap.map((item: any) => `${item.phase}: ${item.exercise}`)
+          : [
               "Focus on roll-back shoulders posture when explaining core technical algorithms.",
               "Introduce a slight pause instead of using filler word transitions.",
               "Continue direct gaze tracking into the camera aperture.",
-            ],
+            ];
+
+        await tx.aIReport.create({
+          data: {
+            sessionId,
+            overallScore: hrFeedback.overallScore ?? overallScore,
+            communicationScore: hrFeedback.scoringBreakdown?.communicationScore ?? communicationScore,
+            technicalScore: hrFeedback.scoringBreakdown?.technicalScore ?? 82.5,
+            overallFeedback,
+            recommendations,
           },
         });
+
+        // Save dynamically generated recruiterNote to the RecruiterReport
+        if (hrFeedback.recruiterNote) {
+          const existingReport = await tx.recruiterReport.findUnique({
+            where: { sessionId },
+          });
+          if (existingReport) {
+            await tx.recruiterReport.update({
+              where: { sessionId },
+              data: {
+                recruiterNotes: hrFeedback.recruiterNote,
+              },
+            });
+          }
+        }
 
         // Set status as COMPLETED
         await tx.interviewSession.update({
