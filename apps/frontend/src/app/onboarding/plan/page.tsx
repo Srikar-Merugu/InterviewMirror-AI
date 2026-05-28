@@ -114,6 +114,7 @@ export default function OnboardingPlanPage() {
         // Store real tokens from the backend response
         if (data.accessToken) {
           document.cookie = `access_token=${data.accessToken}; path=/; max-age=900; SameSite=Lax`;
+          window.localStorage.setItem("mock_auth_token", data.accessToken);
         }
         if (data.refreshToken) {
           document.cookie = `refresh_token=${data.refreshToken}; path=/; max-age=604800; SameSite=Lax`;
@@ -154,6 +155,7 @@ export default function OnboardingPlanPage() {
 
           if (upgradeData.accessToken) {
             document.cookie = `access_token=${upgradeData.accessToken}; path=/; max-age=900; SameSite=Lax`;
+            window.localStorage.setItem("mock_auth_token", upgradeData.accessToken);
           }
           if (upgradeData.refreshToken) {
             document.cookie = `refresh_token=${upgradeData.refreshToken}; path=/; max-age=604800; SameSite=Lax`;

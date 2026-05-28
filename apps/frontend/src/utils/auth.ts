@@ -17,7 +17,11 @@ export const getAuthHeaders = (additionalHeaders: Record<string, string> = {}): 
     ...additionalHeaders,
   };
 
-  const token = getCookie("access_token");
+  const token =
+    getCookie("access_token") ||
+    (typeof window !== "undefined"
+      ? window.localStorage.getItem("mock_auth_token")
+      : null);
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
   }

@@ -116,6 +116,7 @@ export default function AuthPage() {
           );
           document.cookie = `access_token=${fakeToken}; path=/; max-age=900; SameSite=Lax`;
           document.cookie = `refresh_token=mock-refresh-token; path=/; max-age=604800; SameSite=Lax`;
+          window.localStorage.setItem("mock_auth_token", fakeToken);
         }
         // Direct user to onboarding plan selection screen
         router.push("/onboarding/plan");
