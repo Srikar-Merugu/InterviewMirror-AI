@@ -1,0 +1,11 @@
+node_modules
+.next
+dist
+build
+.git
+.turbo
+apps/frontend/.next
+apps/frontend/out
+apps/backend/dist
+packages/database/node_modules
+packages/database/prisma/generated
