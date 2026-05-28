@@ -41882,10 +41882,14 @@ var AuthController = class {
           lockoutUntil: null
         }
       });
+      const subscription = await prisma.subscription.findUnique({
+        where: { userId: user.id }
+      });
       const accessToken = generateAccessToken({
         id: user.id,
         email: user.email,
-        role: user.role
+        role: user.role,
+        tier: subscription?.tier
       });
       const refreshToken = generateRefreshToken({ id: user.id });
       const expiresAt = /* @__PURE__ */ new Date();
@@ -41920,11 +41924,14 @@ var AuthController = class {
       res.status(200).json({
         success: true,
         message: "Sign in successful.",
+        accessToken,
+        refreshToken,
         data: {
           id: user.id,
           email: user.email,
           name: user.name,
-          role: user.role
+          role: user.role,
+          subscription: subscription || null
         }
       });
     } catch (error) {
