@@ -21,6 +21,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { GLASSMORPHISM_STYLES, INTERACTION_CLASSES } from "@interviewmirror/ui";
+import { getAuthHeaders } from "../../utils/auth";
 
 export default function DashboardLayout({
   children,
@@ -83,9 +84,7 @@ export default function DashboardLayout({
       // Call backend logout to clear HttpOnly cookies securely
       await fetch(`${apiBase}/api/v1/auth/logout`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: getAuthHeaders(),
         credentials: "include",
       });
     } catch (err) {

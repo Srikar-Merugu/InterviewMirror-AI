@@ -21,6 +21,7 @@ import {
   Video,
 } from "lucide-react";
 import { GLASSMORPHISM_STYLES, INTERACTION_CLASSES } from "@interviewmirror/ui";
+import { getAuthHeaders } from "../../../utils/auth";
 
 interface DBSession {
   id: string;
@@ -66,7 +67,7 @@ export default function DashboardHomePage() {
         const apiBase = process.env.NEXT_PUBLIC_API_URL || (isDev ? `http://${window.location.hostname}:5001` : "");
 
         const response = await fetch(`${apiBase}/api/v1/interviews`, {
-          headers: { "Content-Type": "application/json" },
+          headers: getAuthHeaders(),
           credentials: "include", // Access cookies context securely
         });
 

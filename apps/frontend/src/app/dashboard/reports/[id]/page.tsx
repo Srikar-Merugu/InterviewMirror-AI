@@ -21,6 +21,7 @@ import {
   Target,
 } from "lucide-react";
 import { GLASSMORPHISM_STYLES, INTERACTION_CLASSES } from "@interviewmirror/ui";
+import { getAuthHeaders } from "../../../../utils/auth";
 
 interface ReportData {
   id: string;
@@ -128,7 +129,7 @@ export default function ReportDetailPage() {
         const response = await fetch(
           `${apiBase}/api/v1/interviews/${reportId}/report`,
           {
-            headers: { "Content-Type": "application/json" },
+            headers: getAuthHeaders(),
             credentials: "include",
           },
         );

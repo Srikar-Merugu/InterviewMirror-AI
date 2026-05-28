@@ -16,6 +16,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { GLASSMORPHISM_STYLES, INTERACTION_CLASSES } from "@interviewmirror/ui";
+import { getAuthHeaders } from "../../../utils/auth";
 
 export default function SettingsPage() {
   const [theme, setTheme] = useState<"dark" | "light">("dark");
@@ -48,7 +49,7 @@ export default function SettingsPage() {
         const apiBase = process.env.NEXT_PUBLIC_API_URL || (isDev ? `http://${window.location.hostname}:5001` : "");
 
         const response = await fetch(`${apiBase}/api/v1/auth/me`, {
-          headers: { "Content-Type": "application/json" },
+          headers: getAuthHeaders(),
           credentials: "include",
         });
 
@@ -56,8 +57,8 @@ export default function SettingsPage() {
           const resJson = await response.json();
           if (resJson.success && resJson.data) {
             const user = resJson.data;
-            if (user.name) setProfileName(user.name);
-            if (user.email) setProfileEmail(user.email);
+            setProfileName(user.name || "");
+            setProfileEmail(user.email || "");
           }
         }
       } catch (err) {
@@ -97,7 +98,7 @@ export default function SettingsPage() {
 
       const response = await fetch(`${apiBase}/api/v1/auth/me`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         credentials: "include",
         body: JSON.stringify({
           name: profileName,

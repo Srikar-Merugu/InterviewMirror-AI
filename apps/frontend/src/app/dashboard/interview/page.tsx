@@ -35,6 +35,7 @@ import {
 import { GLASSMORPHISM_STYLES, INTERACTION_CLASSES } from "@interviewmirror/ui";
 import { useInterviewStore } from "../../../store/interviewStore";
 import { LineChart, Line, ResponsiveContainer, YAxis, Tooltip } from "recharts";
+import { getAuthHeaders } from "../../../utils/auth";
 
 type SessionState =
   | "idle"
@@ -835,7 +836,7 @@ export default function InterviewSimulatorPage() {
       // Register session completion event
       const response = await fetch(`${apiBase}/api/v1/interviews`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify(payload),
         credentials: "include", // Required to pass user authentication tokens!
       });
