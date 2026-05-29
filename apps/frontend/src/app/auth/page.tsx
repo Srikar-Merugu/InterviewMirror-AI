@@ -56,12 +56,17 @@ export default function AuthPage() {
       else if (authMode === "signup") endpoint = `${apiBase}/api/v1/auth/signup`;
       else endpoint = `${apiBase}/api/v1/auth/forgot-password`;
 
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+
       const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({ email, password, name }),
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
 
       const result = await response.json();
       if (!response.ok || !result.success) {
@@ -90,7 +95,11 @@ export default function AuthPage() {
         alert("Account created successfully! Please sign in.");
       }
     } catch (err: any) {
-      setError(err.message || "An unexpected authentication error occurred.");
+      if (err.name === "AbortError") {
+        setError("Request timed out. Check that the backend server is running on port 5001.");
+      } else {
+        setError(err.message || "An unexpected authentication error occurred.");
+      }
     } finally {
       setSubmitting(false);
     }

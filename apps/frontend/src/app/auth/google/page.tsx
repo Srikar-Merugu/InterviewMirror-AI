@@ -33,6 +33,9 @@ export default function GoogleOAuthPage() {
          window.location.hostname === "127.0.0.1");
       const apiBase = process.env.NEXT_PUBLIC_API_URL || (isDev ? `http://${window.location.hostname}:5001` : "");
 
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+
       const response = await fetch(`${apiBase}/api/v1/auth/oauth`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -43,7 +46,9 @@ export default function GoogleOAuthPage() {
           email: selectedEmail,
           name: selectedName,
         }),
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
 
       const result = await response.json();
       if (!response.ok || !result.success) {
@@ -67,7 +72,11 @@ export default function GoogleOAuthPage() {
         router.push("/dashboard/home");
       }
     } catch (err: any) {
-      setError(err.message || "Network error. Make sure backend is running.");
+      if (err.name === "AbortError") {
+        setError("Request timed out. Check that the backend server is running on port 5001.");
+      } else {
+        setError(err.message || "Network error. Make sure backend is running.");
+      }
     } finally {
       setSubmitting(false);
     }
