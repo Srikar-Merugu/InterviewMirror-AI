@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import {
   User,
   Bell,
-  Shield,
   CreditCard,
   Sparkles,
   Check,
@@ -14,29 +13,27 @@ import {
   Save,
   RefreshCw,
   Loader2,
+  ChevronRight,
+  Mail,
 } from "lucide-react";
-import { GLASSMORPHISM_STYLES, INTERACTION_CLASSES } from "@interviewmirror/ui";
 import { getAuthHeaders, getCookie } from "../../../utils/auth";
+import { GlassCard } from "@/components/ui/GlassCard";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 
 export default function SettingsPage() {
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [profileName, setProfileName] = useState("Loading...");
-  const [profileEmail, setProfileEmail] = useState(
-    "loading@interviewmirror.com",
-  );
+  const [profileEmail, setProfileEmail] = useState("loading@interviewmirror.com");
   const [targetRole, setTargetRole] = useState("Senior AI Systems Architect");
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [subscriptionTier, setSubscriptionTier] = useState<string>("FREE");
 
-  // Sync theme with local storage & fetch dynamic user details on mount
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const storedTheme = window.localStorage.getItem("app_theme") as
-        | "dark"
-        | "light"
-        | null;
+      const storedTheme = window.localStorage.getItem("app_theme") as "dark" | "light" | null;
       setTheme(storedTheme || "dark");
     }
 
@@ -53,7 +50,7 @@ export default function SettingsPage() {
           setProfileEmail("candidate@interviewmirror.com");
           setSubscriptionTier("FREE");
         }
-      } catch (e) {
+      } catch {
         setProfileName("Candidate User");
         setProfileEmail("candidate@interviewmirror.com");
         setSubscriptionTier("FREE");
@@ -87,8 +84,7 @@ export default function SettingsPage() {
         } else {
           fallbackFromToken();
         }
-      } catch (err) {
-        console.error("Failed to load registered user details:", err);
+      } catch {
         fallbackFromToken();
       }
     };
@@ -127,10 +123,7 @@ export default function SettingsPage() {
         method: "PUT",
         headers: getAuthHeaders(),
         credentials: "include",
-        body: JSON.stringify({
-          name: profileName,
-          email: profileEmail,
-        }),
+        body: JSON.stringify({ name: profileName, email: profileEmail }),
       });
 
       const resJson = await response.json();
@@ -143,7 +136,6 @@ export default function SettingsPage() {
         setTimeout(() => setSuccess(false), 4000);
       }
     } catch (err: any) {
-      console.error("Failed to update profile details:", err);
       setErrorMsg(err.message || "An unexpected network error occurred.");
     } finally {
       setSaving(false);
@@ -151,269 +143,215 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
         <h1 className="font-heading font-black text-2xl md:text-3xl text-white tracking-tight">
-          Portal Settings
+          Settings
         </h1>
-        <p className="text-xs text-zinc-500 mt-1">
-          Manage your candidate profile details, notification limits, billing
-          subscriptions, and theme modes.
+        <p className="text-sm text-zinc-500 mt-1">
+          Manage your profile, notifications, billing, and theme preferences.
         </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Account Profile settings */}
+        {/* Left Column */}
         <div className="lg:col-span-8 space-y-6">
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={`${GLASSMORPHISM_STYLES.card} p-6 border-zinc-900/60`}
-          >
-            <div className="flex items-center space-x-2.5 mb-4 pb-2 border-b border-zinc-900">
+          {/* Profile */}
+          <GlassCard className="p-6">
+            <div className="flex items-center gap-2.5 mb-5 pb-3 border-b border-white/[0.04]">
               <User className="w-4 h-4 text-indigo-400" />
               <h3 className="font-heading font-semibold text-sm text-zinc-200">
-                Candidate Profile Details
+                Profile Details
               </h3>
             </div>
 
             {success && (
-              <div className="mb-4 bg-emerald-950/20 border border-emerald-900/30 text-emerald-400 p-2.5 rounded text-xs">
-                Profile details successfully saved and synced to database nodes.
+              <div className="mb-4 bg-emerald-500/5 border border-emerald-500/10 text-emerald-400 p-3 rounded-xl text-xs flex items-center gap-2">
+                <Check className="w-4 h-4" />
+                Profile saved successfully.
               </div>
             )}
 
             {errorMsg && (
-              <div className="mb-4 bg-red-950/20 border border-red-900/30 text-red-400 p-2.5 rounded text-xs">
+              <div className="mb-4 bg-red-500/5 border border-red-500/10 text-red-400 p-3 rounded-xl text-xs">
                 {errorMsg}
               </div>
             )}
 
             <form onSubmit={handleSaveProfile} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-[10px] uppercase font-bold text-zinc-500">
-                    Full Name
-                  </label>
-                  <input
-                    type="text"
-                    value={profileName}
-                    onChange={(e) => setProfileName(e.target.value)}
-                    className={`w-full ${GLASSMORPHISM_STYLES.input} border-zinc-800 text-zinc-200 placeholder:text-zinc-700 text-xs`}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[10px] uppercase font-bold text-zinc-500">
-                    Email Address
-                  </label>
-                  <input
-                    type="email"
-                    value={profileEmail}
-                    onChange={(e) => setProfileEmail(e.target.value)}
-                    className={`w-full ${GLASSMORPHISM_STYLES.input} border-zinc-800 text-zinc-200 placeholder:text-zinc-700 text-xs`}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] uppercase font-bold text-zinc-500">
-                  Target Tech Role
-                </label>
-                <input
-                  type="text"
-                  value={targetRole}
-                  onChange={(e) => setTargetRole(e.target.value)}
-                  className={`w-full ${GLASSMORPHISM_STYLES.input} border-zinc-800 text-zinc-200 placeholder:text-zinc-700 text-xs`}
+                <Input
+                  label="Full Name"
+                  value={profileName}
+                  onChange={(e) => setProfileName(e.target.value)}
+                  icon={<User className="w-4 h-4" />}
+                  required
+                />
+                <Input
+                  label="Email Address"
+                  type="email"
+                  value={profileEmail}
+                  onChange={(e) => setProfileEmail(e.target.value)}
+                  icon={<Mail className="w-4 h-4" />}
+                  required
                 />
               </div>
 
-              <button
-                type="submit"
-                disabled={saving}
-                className={`${INTERACTION_CLASSES.primaryButton} py-2 px-4 flex items-center justify-center`}
-              >
-                {saving ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
-                    <span>Saving...</span>
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4 mr-1.5" />
-                    <span>Save profile details</span>
-                  </>
-                )}
-              </button>
-            </form>
-          </motion.div>
+              <Input
+                label="Target Tech Role"
+                value={targetRole}
+                onChange={(e) => setTargetRole(e.target.value)}
+              />
 
-          {/* Notification bounds */}
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className={`${GLASSMORPHISM_STYLES.card} p-6 border-zinc-900/60`}
-          >
-            <div className="flex items-center space-x-2.5 mb-4 pb-2 border-b border-zinc-900">
+              <Button type="submit" loading={saving} icon={<Save className="w-4 h-4" />}>
+                {saving ? "Saving..." : "Save Profile"}
+              </Button>
+            </form>
+          </GlassCard>
+
+          {/* Notifications */}
+          <GlassCard className="p-6">
+            <div className="flex items-center gap-2.5 mb-5 pb-3 border-b border-white/[0.04]">
               <Bell className="w-4 h-4 text-purple-400" />
               <h3 className="font-heading font-semibold text-sm text-zinc-200">
-                Alert Checkpoints Configuration
+                Notification Preferences
               </h3>
             </div>
 
             <div className="space-y-3">
               {[
                 {
-                  label: "Email assessment summary immediately on compilation",
-                  desc: "Sends completed rubrics metrics right after you press End Session in sandbox.",
+                  label: "Email assessment summary on compilation",
+                  desc: "Receive completed rubrics right after ending a session.",
                 },
                 {
-                  label: "Weekly progress analytics email digest",
-                  desc: "Summarizes posture slump counts, wpm deviations, and average gazes.",
+                  label: "Weekly progress analytics digest",
+                  desc: "Summarizes posture, WPM deviations, and gaze metrics.",
                 },
                 {
-                  label: "New recruiter connection notifications",
-                  desc: "Notify when hiring managers click on public share links.",
+                  label: "New recruiter connection alerts",
+                  desc: "Notify when hiring managers view your share links.",
                 },
               ].map((item, idx) => (
-                <div
+                <label
                   key={idx}
-                  className="flex items-start space-x-3 text-xs leading-normal"
+                  className="flex items-start gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.04] cursor-pointer hover:bg-white/[0.04] transition-colors"
                 >
                   <input
                     type="checkbox"
                     defaultChecked
-                    className="mt-1 accent-indigo-500 rounded border-zinc-800 bg-zinc-900 w-4 h-4 cursor-pointer"
+                    className="mt-0.5 accent-indigo-500 rounded border-white/[0.08] bg-white/[0.03] w-4 h-4"
                   />
                   <div>
-                    <div className="font-semibold text-zinc-300">
-                      {item.label}
-                    </div>
-                    <div className="text-[10px] text-zinc-500 mt-0.5">
-                      {item.desc}
-                    </div>
+                    <div className="text-sm font-medium text-zinc-300">{item.label}</div>
+                    <div className="text-xs text-zinc-600 mt-0.5">{item.desc}</div>
                   </div>
-                </div>
+                </label>
               ))}
             </div>
-          </motion.div>
+          </GlassCard>
         </div>
 
-        {/* Right Column: Theme & Billing summary info */}
+        {/* Right Column */}
         <div className="lg:col-span-4 space-y-6">
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={`${GLASSMORPHISM_STYLES.card} p-5 border-zinc-900/60`}
-          >
-            <h3 className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider mb-3">
-              Layout Color theme
+          {/* Theme */}
+          <GlassCard className="p-5">
+            <h3 className="text-[10px] uppercase font-bold tracking-widest text-zinc-500 mb-3">
+              Theme
             </h3>
 
             <button
               onClick={handleToggleTheme}
-              className="w-full bg-zinc-900 border border-zinc-800 hover:bg-zinc-850 p-3 rounded-lg flex items-center justify-between text-xs cursor-pointer transition-colors"
+              className="w-full flex items-center justify-between p-3 rounded-xl bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.04] transition-all text-xs"
             >
-              <div className="flex items-center space-x-2 text-zinc-300">
+              <div className="flex items-center gap-2 text-zinc-300">
                 {theme === "dark" ? (
                   <Moon className="w-4 h-4 text-purple-400" />
                 ) : (
                   <Sun className="w-4 h-4 text-amber-400" />
                 )}
-                <span>
-                  {theme === "dark"
-                    ? "Dark Canvas (Selected)"
-                    : "Slate Light (Selected)"}
-                </span>
+                <span>{theme === "dark" ? "Dark Mode" : "Light Mode"}</span>
               </div>
-              <RefreshCw className="w-3.5 h-3.5 text-zinc-500" />
+              <RefreshCw className="w-3.5 h-3.5 text-zinc-600" />
             </button>
-          </motion.div>
+          </GlassCard>
 
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className={`${GLASSMORPHISM_STYLES.card} p-5 border-zinc-900/60 space-y-4`}
-          >
-            <div className="flex items-center space-x-2.5 pb-2 border-b border-zinc-900">
+          {/* Subscription */}
+          <GlassCard className="p-5">
+            <div className="flex items-center gap-2.5 pb-3 border-b border-white/[0.04] mb-4">
               <CreditCard className="w-4 h-4 text-emerald-400" />
               <h3 className="font-heading font-semibold text-sm text-zinc-200">
-                Active Subscription
+                Subscription
               </h3>
             </div>
 
-            <div className="bg-zinc-950/60 border border-zinc-900 p-4 rounded-lg">
-              <div className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">
-                Plan Name
+            <div className="bg-white/[0.02] border border-white/[0.04] p-4 rounded-xl mb-4">
+              <div className="text-[10px] uppercase font-bold tracking-widest text-zinc-500">
+                Current Plan
               </div>
-              <div className="text-lg font-heading font-black text-emerald-400 mt-1">
+              <div className="text-xl font-heading font-black premium-gradient-text mt-1">
                 {subscriptionTier === "FREE"
-                  ? "Mock Sandbox"
+                  ? "Starter"
                   : subscriptionTier === "PRO"
-                    ? "Professional Candidate"
-                    : "Recruiter Enterprise"}
+                    ? "Pro"
+                    : "Premium"}
               </div>
-              <div className="text-xs text-zinc-400 mt-0.5">
+              <div className="text-xs text-zinc-500 mt-0.5">
                 {subscriptionTier === "FREE"
-                  ? "$0 / month (Limited Access)"
+                  ? "$0 / month (5 runs/mo)"
                   : subscriptionTier === "PRO"
                     ? "$19 / month (30 runs/mo)"
                     : "$49 / month (Unlimited)"}
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 mb-4">
               {subscriptionTier === "FREE" ? (
                 <>
-                  <div className="flex items-center space-x-2 text-xs text-zinc-400">
-                    <Check className="w-4 h-4 text-zinc-500" />
-                    <span>5 Mock interviews / month limit</span>
+                  <div className="flex items-center gap-2 text-xs text-zinc-500">
+                    <Check className="w-3.5 h-3.5 text-zinc-600" />
+                    <span>5 Mock interviews / month</span>
                   </div>
-                  <div className="flex items-center space-x-2 text-xs text-zinc-400">
-                    <Check className="w-4 h-4 text-zinc-500" />
+                  <div className="flex items-center gap-2 text-xs text-zinc-500">
+                    <Check className="w-3.5 h-3.5 text-zinc-600" />
                     <span>Standard dashboard analytics</span>
                   </div>
                 </>
               ) : subscriptionTier === "PRO" ? (
                 <>
-                  <div className="flex items-center space-x-2 text-xs text-zinc-300">
-                    <Check className="w-4 h-4 text-emerald-400" />
-                    <span>30 Mock interviews / month limit</span>
+                  <div className="flex items-center gap-2 text-xs text-zinc-300">
+                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>30 Mock interviews / month</span>
                   </div>
-                  <div className="flex items-center space-x-2 text-xs text-zinc-300">
-                    <Check className="w-4 h-4 text-emerald-400" />
-                    <span>Iris and slumping telemetry</span>
+                  <div className="flex items-center gap-2 text-xs text-zinc-300">
+                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Iris & slumping telemetry</span>
                   </div>
                 </>
               ) : (
                 <>
-                  <div className="flex items-center space-x-2 text-xs text-zinc-300">
-                    <Check className="w-4 h-4 text-emerald-400" />
-                    <span>Unlimited Mock interviews</span>
+                  <div className="flex items-center gap-2 text-xs text-zinc-300">
+                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Unlimited interviews</span>
                   </div>
-                  <div className="flex items-center space-x-2 text-xs text-zinc-300">
-                    <Check className="w-4 h-4 text-emerald-400" />
-                    <span>All Recruiter analytics unlocked</span>
+                  <div className="flex items-center gap-2 text-xs text-zinc-300">
+                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>All recruiter analytics</span>
                   </div>
                 </>
               )}
             </div>
 
-            <button
-              onClick={() => {
-                if (typeof window !== "undefined") {
-                  window.location.href = "/pricing";
-                }
-              }}
-              className="w-full bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-200 py-2 rounded-lg text-xs font-semibold cursor-pointer transition-colors"
+            <Button
+              variant="secondary"
+              onClick={() => { window.location.href = "/pricing"; }}
+              className="w-full"
+              size="sm"
             >
-              Manage billing parameters
-            </button>
-          </motion.div>
+              Manage Billing
+              <ChevronRight className="w-3 h-3" />
+            </Button>
+          </GlassCard>
         </div>
       </div>
     </div>

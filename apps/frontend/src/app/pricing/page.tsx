@@ -11,37 +11,35 @@ import {
   ShieldCheck,
   Zap,
   Globe,
-  MessageSquareCode,
   CreditCard,
   Loader2,
   Lock,
+  ChevronRight,
+  X,
 } from "lucide-react";
-import { GLASSMORPHISM_STYLES, INTERACTION_CLASSES } from "@interviewmirror/ui";
 import { getAuthHeaders } from "../../utils/auth";
+import { Navbar } from "@/components/ui/Navbar";
+import { GlassCard } from "@/components/ui/GlassCard";
+import { Button } from "@/components/ui/Button";
 
 const planFeatures = [
   { category: "Interviews", name: "Monthly Mock Interviews Limit", free: "5 sessions", pro: "30 sessions", enterprise: "Unlimited" },
   { category: "Interviews", name: "Speech Filler Audio Analysis", free: "Standard count", pro: "Whisper detail logs", enterprise: "Whisper priority" },
   { category: "Body Language", name: "MediaPipe Posture Landmarks", free: "Basic slump count", pro: "Detailed shoulder tilts", enterprise: "Advanced body vectors" },
-  { category: "Body Language", name: "Iris Eye Contact Focus Coords", free: "❌", pro: "88% gaze detection", enterprise: "Direct iris focus mapping" },
-  { category: "Recruiters", name: "Shareable Performance Reports", free: "❌", pro: "White-labeled pages", enterprise: "Public sync Greenhouse links" },
+  { category: "Body Language", name: "Iris Eye Contact Focus Coords", free: "—", pro: "88% gaze detection", enterprise: "Direct iris focus mapping" },
+  { category: "Recruiters", name: "Shareable Performance Reports", free: "—", pro: "White-labeled pages", enterprise: "Public sync Greenhouse links" },
   { category: "Support", name: "AI Feedback Response Latency", free: "Standard 3s", pro: "Priority 0.5s", enterprise: "SLA Dedicated" },
 ];
 
 export default function PricingPage() {
   const router = useRouter();
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
-  
-  // Dynamic user profile states
   const [user, setUser] = useState<any>(null);
   const [loadingUser, setLoadingUser] = useState(true);
-
-  // Payment checkout modal states
   const [checkoutPlan, setCheckoutPlan] = useState<any>(null);
   const [paymentRunning, setPaymentRunning] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
 
-  // Load profile on mount to resolve plan state
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -82,7 +80,6 @@ export default function PricingPage() {
     const targetTier = planKey === "FREE" ? "FREE" : planKey === "PRO" ? "PRO" : "ENTERPRISE";
 
     if (targetTier === "FREE") {
-      // Downgrade to FREE instantly
       setPaymentRunning(true);
       try {
         const isDev =
@@ -114,7 +111,6 @@ export default function PricingPage() {
             tier: "FREE",
           },
         }));
-        alert("Plan changed to Free Sandbox.");
         router.push("/dashboard/home");
       } catch (err: any) {
         alert(err.message || "Error changing plan.");
@@ -123,8 +119,7 @@ export default function PricingPage() {
       }
       return;
     }
-    
-    // Call backend to initialize checkout session
+
     try {
       const isDev =
         typeof window !== "undefined" &&
@@ -144,10 +139,9 @@ export default function PricingPage() {
       });
 
       const resJson = await response.json();
-      
+
       if (response.ok && resJson.success) {
         if (resJson.mode === "stripe" && resJson.url) {
-          // Redirect to stripe checkout page
           window.location.href = resJson.url;
           return;
         }
@@ -156,12 +150,11 @@ export default function PricingPage() {
       console.warn("Stripe backend checkout route failed, falling back to simulated modal UI:", err);
     }
 
-    // Set active modal states for simulated sandbox
     setCheckoutPlan({
       tier: targetTier,
       name: planKey === "FREE" ? "Mock Sandbox" : planKey === "PRO" ? "Professional Candidate" : "Recruiter Enterprise",
-      price: billingCycle === "monthly" 
-        ? (planKey === "PRO" ? "$19" : "$49") 
+      price: billingCycle === "monthly"
+        ? (planKey === "PRO" ? "$19" : "$49")
         : (planKey === "PRO" ? "$15" : "$39"),
     });
   };
@@ -185,9 +178,7 @@ export default function PricingPage() {
           ...getAuthHeaders(),
         },
         credentials: "include",
-        body: JSON.stringify({
-          tier: checkoutPlan.tier,
-        }),
+        body: JSON.stringify({ tier: checkoutPlan.tier }),
       });
 
       const resJson = await response.json();
@@ -196,8 +187,7 @@ export default function PricingPage() {
       }
 
       setPaymentSuccess(true);
-      
-      // Update local state
+
       setUser((prev: any) => ({
         ...prev,
         subscription: {
@@ -222,6 +212,7 @@ export default function PricingPage() {
   const isUserSubscribed = (planKey: string) => {
     if (!user) return false;
     const tier = user.subscription?.tier || "FREE";
+    if (tier === "ENTERPRISE") return planKey === "ENTERPRISE";
     return tier === planKey;
   };
 
@@ -241,8 +232,9 @@ export default function PricingPage() {
       ],
       cta: user ? (isUserSubscribed("FREE") ? "Current Plan" : "Downgrade Sandbox") : "Start Free Sandbox",
       popular: false,
-      icon: MessageSquareCode,
-      glow: "group-hover:bg-zinc-800/10",
+      icon: Sparkles,
+      color: "from-zinc-500 to-zinc-600",
+      border: "border-zinc-700/30",
     },
     {
       key: "PRO",
@@ -261,7 +253,8 @@ export default function PricingPage() {
       cta: user ? (isUserSubscribed("PRO") ? "Active Plan" : "Get Professional") : "Get Professional",
       popular: true,
       icon: Zap,
-      glow: "group-hover:bg-indigo-600/15",
+      color: "from-indigo-500 to-violet-600",
+      border: "border-indigo-500/30",
     },
     {
       key: "ENTERPRISE",
@@ -280,345 +273,339 @@ export default function PricingPage() {
       cta: user ? (isUserSubscribed("ENTERPRISE") ? "Active Plan" : "Upgrade to Premium") : "Contact Enterprise",
       popular: false,
       icon: Globe,
-      glow: "group-hover:bg-purple-600/15",
+      color: "from-amber-500 to-orange-600",
+      border: "border-amber-500/20",
     },
   ];
 
   return (
-    <div className="min-h-screen text-zinc-100 flex flex-col relative pb-12 bg-canvas">
-      {/* Background Radial Glowing highlights */}
-      <div className="absolute top-0 left-0 right-0 h-[600px] radial-glowing-effect pointer-events-none z-0" />
+    <div className="min-h-screen text-zinc-100 flex flex-col relative bg-[#0a0a0b] overflow-x-hidden">
+      {/* Ambient Background */}
+      <div className="fixed inset-0 bg-[linear-gradient(to_right,#80808006_1px,transparent_1px),linear-gradient(to_bottom,#80808006_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none z-0" />
+      <div className="fixed top-[-10%] left-[-5%] w-[50%] h-[50%] rounded-full bg-indigo-600/5 blur-[150px] pointer-events-none z-0" />
 
-      {/* Header bar */}
-      <header className={`sticky top-0 z-50 flex items-center justify-between px-6 py-4 ${GLASSMORPHISM_STYLES.header}`}>
-        <Link href="/" className="flex items-center space-x-3 cursor-pointer">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-            <Sparkles className="w-4 h-4 text-white" />
+      <Navbar />
+
+      <main className="relative z-10 flex-1">
+        {/* Header */}
+        <section className="pt-32 pb-12 text-center">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="inline-flex items-center gap-2 bg-white/[0.03] border border-white/[0.06] text-indigo-300 px-4 py-1.5 rounded-full text-xs font-semibold mb-6"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>PRICING MODELS FOR CANDIDATES AND TEAMS</span>
+            </motion.div>
+
+            <motion.h1
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="font-heading font-black text-3xl md:text-5xl tracking-tight text-white mb-4"
+            >
+              Flexible plans for{" "}
+              <span className="premium-gradient-text">absolute confidence</span>
+            </motion.h1>
+
+            <motion.p
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+              className="text-sm text-zinc-500 leading-relaxed max-w-xl mx-auto"
+            >
+              Train with our standard CV tracking model, eliminate speech fillers,
+              analyze direct camera gaze focal coordinates, and unlock recruiter
+              analytics.
+            </motion.p>
           </div>
-          <span className="font-heading font-bold text-lg tracking-tight bg-gradient-to-r from-white via-zinc-200 to-zinc-400 bg-clip-text text-transparent">
-            InterviewMirror AI
-          </span>
-        </Link>
+        </section>
 
-        <div className="flex items-center space-x-3">
-          {user ? (
-            <Link href="/dashboard/home" className={INTERACTION_CLASSES.secondaryButton}>
-              Dashboard
-            </Link>
-          ) : (
-            <Link href="/auth" className={INTERACTION_CLASSES.primaryButton}>
-              Sign In
-            </Link>
-          )}
-        </div>
-      </header>
-
-      {/* Main Container */}
-      <main className="relative z-10 flex-1 max-w-6xl mx-auto w-full px-6 pt-12">
-        <div className="text-center max-w-2xl mx-auto mb-10">
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center space-x-1.5 bg-zinc-900 border border-zinc-800 text-indigo-400 px-3 py-1 rounded-full text-xs font-semibold mb-3"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>PRICING MODELS FOR CANDIDATES AND TEAMS</span>
-          </motion.div>
-
-          <motion.h1
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="font-heading font-black text-3xl md:text-5xl tracking-tight bg-gradient-to-b from-white to-zinc-450 bg-clip-text text-transparent mb-4"
-          >
-            Flexible plans for absolute interview confidence
-          </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 }}
-            className="text-xs md:text-sm text-zinc-500 leading-relaxed"
-          >
-            Train with our standard CV tracking model, eliminate speech fillers,
-            analyze direct camera gaze focal coordinates, and unlock recruiter
-            analytics.
-          </motion.p>
-        </div>
-
-        {/* Billing cycle toggles */}
-        <div className="flex items-center justify-center mb-12">
-          <div className="bg-zinc-950/80 border border-zinc-900 p-1 rounded-full flex items-center space-x-1 relative">
-            <button
-              onClick={() => setBillingCycle("monthly")}
-              className={`px-4 py-1.5 rounded-full text-xs font-medium cursor-pointer transition-all duration-200 relative z-10 ${
-                billingCycle === "monthly" ? "text-black" : "text-zinc-400 hover:text-zinc-200"
-              }`}
-            >
-              Monthly billing
-            </button>
-            <button
-              onClick={() => setBillingCycle("yearly")}
-              className={`px-4 py-1.5 rounded-full text-xs font-medium cursor-pointer transition-all duration-200 relative z-10 ${
-                billingCycle === "yearly" ? "text-black" : "text-zinc-400 hover:text-zinc-200"
-              }`}
-            >
-              Yearly (save 20%)
-            </button>
+        {/* Billing Toggle */}
+        <div className="flex items-center justify-center mb-10">
+          <div className="bg-white/[0.03] border border-white/[0.06] p-1 rounded-full flex items-center gap-1 relative">
+            {["monthly", "yearly"].map((cycle) => (
+              <button
+                key={cycle}
+                onClick={() => setBillingCycle(cycle as any)}
+                className={`relative z-10 px-5 py-2 rounded-full text-xs font-semibold transition-all duration-200 ${
+                  billingCycle === cycle
+                    ? "text-black"
+                    : "text-zinc-400 hover:text-zinc-200"
+                }`}
+              >
+                {cycle === "monthly" ? "Monthly billing" : "Yearly (save 20%)"}
+              </button>
+            ))}
             <motion.div
               layout
               className="absolute inset-y-1 rounded-full bg-white z-0"
               style={{
-                left: billingCycle === "monthly" ? 4 : "52%",
-                width: billingCycle === "monthly" ? "92px" : "110px",
+                left: billingCycle === "monthly" ? 4 : "53%",
+                width: billingCycle === "monthly" ? "116px" : "136px",
               }}
               transition={{ type: "spring", stiffness: 380, damping: 30 }}
             />
           </div>
         </div>
 
-        {/* Pricing matrix grids */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
-          {pricingTiers.map((tier, idx) => {
-            const IconComponent = tier.icon;
-            const price = billingCycle === "monthly" ? tier.monthlyPrice : tier.yearlyPrice;
-            const isActive = isUserSubscribed(tier.key);
+        {/* Pricing Cards */}
+        <section className="pb-16">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {pricingTiers.map((tier, idx) => {
+                const IconComponent = tier.icon;
+                const price = billingCycle === "monthly" ? tier.monthlyPrice : tier.yearlyPrice;
+                const isActive = isUserSubscribed(tier.key);
 
-            return (
-              <motion.div
-                key={tier.name}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.05 + 0.1 }}
-                className={`${GLASSMORPHISM_STYLES.card} p-6 flex flex-col relative overflow-hidden group hover:border-zinc-700 hover:shadow-2xl transition-all duration-300 ${
-                  tier.popular ? "border-indigo-500/50 bg-zinc-900/30" : ""
-                }`}
-              >
-                <div className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl pointer-events-none transition-all duration-500 ${tier.glow}`} />
+                return (
+                  <motion.div
+                    key={tier.name}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.1, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                    className={`relative rounded-2xl border p-8 flex flex-col transition-all duration-300 ${
+                      tier.popular
+                        ? "border-indigo-500/30 bg-gradient-to-b from-indigo-500/5 to-transparent shadow-[0_0_40px_-10px_rgba(99,102,241,0.15)]"
+                        : "border-white/[0.06] bg-white/[0.02] hover:border-white/[0.1]"
+                    }`}
+                  >
+                    {tier.popular && (
+                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-indigo-500 to-violet-500 text-white text-[10px] font-bold px-4 py-1 rounded-full uppercase tracking-wider shadow-lg shadow-indigo-500/20">
+                        Most Popular
+                      </div>
+                    )}
 
-                {tier.popular && (
-                  <div className="absolute top-4 right-4 bg-indigo-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
-                    Most Popular
-                  </div>
-                )}
+                    <div className="mb-6">
+                      <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${tier.color} flex items-center justify-center mb-4 shadow-lg`}>
+                        <IconComponent className="w-5 h-5 text-white" />
+                      </div>
+                      <h3 className="font-heading font-bold text-lg text-white">{tier.name}</h3>
+                      <p className="text-xs text-zinc-500 mt-1.5 leading-relaxed min-h-[36px]">
+                        {tier.description}
+                      </p>
+                    </div>
 
-                <div className="mb-6">
-                  <div className="w-9 h-9 rounded-lg bg-zinc-950 border border-zinc-900 flex items-center justify-center text-zinc-150 mb-4 group-hover:scale-105 transition-transform">
-                    <IconComponent className="w-4.5 h-4.5" />
-                  </div>
-                  <h3 className="font-heading font-bold text-lg text-white">
-                    {tier.name}
-                  </h3>
-                  <p className="text-[11px] text-zinc-500 mt-1 leading-relaxed min-h-[36px]">
-                    {tier.description}
-                  </p>
-                </div>
+                    <div className="mb-6 flex items-baseline gap-1">
+                      <span className="text-4xl font-heading font-black text-white">
+                        ${price}
+                      </span>
+                      <span className="text-xs text-zinc-500">/ mo</span>
+                    </div>
 
-                <div className="mb-6 flex items-baseline space-x-1">
-                  <span className="text-3xl font-heading font-black text-white">
-                    ${price}
-                  </span>
-                  <span className="text-xs text-zinc-500">/ mo</span>
-                </div>
+                    <Button
+                      onClick={() => handleCheckoutAction(tier.key)}
+                      variant={tier.popular ? "primary" : "secondary"}
+                      className="w-full mb-6"
+                      disabled={isActive}
+                    >
+                      {isActive ? (
+                        "Active Plan"
+                      ) : (
+                        <>
+                          {tier.cta}
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </>
+                      )}
+                    </Button>
 
-                <button
-                  onClick={() => handleCheckoutAction(tier.key)}
-                  disabled={isActive}
-                  className={`w-full py-2 px-4 rounded-md text-xs font-semibold flex items-center justify-center transition-all cursor-pointer ${
-                    isActive 
-                      ? "bg-zinc-950/60 text-zinc-500 border border-zinc-900 cursor-not-allowed"
-                      : tier.popular
-                        ? "bg-white text-black hover:bg-zinc-200 active:scale-[0.97]"
-                        : "bg-zinc-900 text-zinc-250 border border-zinc-800 hover:bg-zinc-800 active:scale-[0.97]"
-                  } mb-6`}
-                >
-                  <span>{tier.cta}</span>
-                  {!isActive && <ArrowRight className="w-3.5 h-3.5 ml-1.5" />}
-                </button>
+                    <div className="border-t border-white/[0.04] pt-6" />
 
-                <hr className="border-zinc-950 mb-6" />
-
-                <ul className="space-y-3 flex-1 text-[11px] text-zinc-400">
-                  {tier.features.map((feature, fIdx) => (
-                    <li key={fIdx} className="flex items-start space-x-2">
-                      <Check className="w-3.5 h-3.5 text-emerald-500 mt-0.5 flex-shrink-0" />
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-              </motion.div>
-            );
-          })}
-        </div>
-
-        {/* Feature comparison table */}
-        <section className="mb-20">
-          <div className="text-center max-w-2xl mx-auto mb-10">
-            <h2 className="font-heading font-bold text-xl md:text-2xl tracking-tight text-white">
-              Full Feature Comparison Matrix
-            </h2>
-            <p className="text-[11px] text-zinc-500 mt-1">
-              Compare plan details, facial telemetry configurations, and recruiter parameters.
-            </p>
-          </div>
-
-          <div className={`${GLASSMORPHISM_STYLES.card} overflow-x-auto border-zinc-900/60 bg-zinc-950/10`}>
-            <table className="w-full text-left text-[11px] border-collapse min-w-[600px]">
-              <thead>
-                <tr className="border-b border-zinc-900 text-zinc-400 font-bold bg-zinc-900/10">
-                  <th className="p-4">Plan Parameters</th>
-                  <th className="p-4">Mock Sandbox</th>
-                  <th className="p-4">Professional Plan</th>
-                  <th className="p-4">Recruiter Enterprise</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-900/40 text-zinc-300">
-                {planFeatures.map((feat, idx) => (
-                  <tr key={idx} className="hover:bg-zinc-900/5 transition-colors">
-                    <td className="p-4">
-                      <div className="font-semibold text-zinc-200">{feat.name}</div>
-                      <div className="text-[9px] text-zinc-500 mt-0.5">{feat.category}</div>
-                    </td>
-                    <td className="p-4 text-zinc-400">{feat.free}</td>
-                    <td className="p-4 text-zinc-200 font-semibold">{feat.pro}</td>
-                    <td className="p-4 text-indigo-400 font-bold">{feat.enterprise}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    <ul className="space-y-3 flex-1">
+                      {tier.features.map((feature, fIdx) => (
+                        <li key={fIdx} className="flex items-start gap-3 text-xs text-zinc-400">
+                          <Check className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                          <span>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </motion.div>
+                );
+              })}
+            </div>
           </div>
         </section>
 
-        {/* Badges footer section */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 border-t border-zinc-950 pt-12 text-center">
-          <div className="flex flex-col items-center p-4">
-            <ShieldCheck className="w-8 h-8 text-indigo-400 mb-2" />
-            <h4 className="font-heading font-semibold text-xs mb-1">
-              Secure processing models
-            </h4>
-            <p className="text-[10px] text-zinc-500 leading-relaxed">
-              Video processing layers run in completely sandboxed cloud frames, maintaining candidate privacy.
-            </p>
+        {/* Feature Comparison Table */}
+        <section className="pb-20">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-10">
+              <h2 className="font-heading font-bold text-xl md:text-2xl text-white">
+                Full Feature Comparison
+              </h2>
+              <p className="text-sm text-zinc-500 mt-1">
+                Compare plan details, facial telemetry configurations, and recruiter parameters.
+              </p>
+            </div>
+
+            <div className="glass-card rounded-2xl overflow-hidden border-white/[0.04]">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse min-w-[600px]">
+                  <thead>
+                    <tr className="border-b border-white/[0.04] text-zinc-400 font-semibold bg-white/[0.02]">
+                      <th className="p-4 font-heading">Plan Parameters</th>
+                      <th className="p-4 font-heading">Mock Sandbox</th>
+                      <th className="p-4 font-heading">Professional Plan</th>
+                      <th className="p-4 font-heading">Recruiter Enterprise</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/[0.03]">
+                    {planFeatures.map((feat, idx) => (
+                      <tr key={idx} className="hover:bg-white/[0.02] transition-colors">
+                        <td className="p-4">
+                          <div className="text-zinc-200 font-medium">{feat.name}</div>
+                          <div className="text-[10px] text-zinc-600 mt-0.5 uppercase tracking-wider">{feat.category}</div>
+                        </td>
+                        <td className="p-4 text-zinc-500">{feat.free}</td>
+                        <td className="p-4 text-zinc-200 font-medium">{feat.pro}</td>
+                        <td className="p-4 premium-gradient-text font-bold">{feat.enterprise}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
-          <div className="flex flex-col items-center p-4">
-            <Check className="w-8 h-8 text-emerald-400 mb-2" />
-            <h4 className="font-heading font-semibold text-xs mb-1">
-              Instant Cancellation
-            </h4>
-            <p className="text-[10px] text-zinc-500 leading-relaxed">
-              Easily change, upgrade, or pause subscription parameters at any point from account settings.
-            </p>
+        </section>
+
+        {/* Trust Badges */}
+        <section className="pb-20">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              {[
+                {
+                  icon: ShieldCheck,
+                  title: "Secure Processing",
+                  desc: "Video processing layers run in completely sandboxed cloud frames, maintaining candidate privacy.",
+                  color: "text-indigo-400",
+                },
+                {
+                  icon: Check,
+                  title: "Instant Cancellation",
+                  desc: "Easily change, upgrade, or pause subscription parameters at any point from account settings.",
+                  color: "text-emerald-400",
+                },
+                {
+                  icon: Zap,
+                  title: "ATS Integrations",
+                  desc: "Instantly link generated profiles to Greenhouse, Lever, and Greenhouse HR portals.",
+                  color: "text-purple-400",
+                },
+              ].map((badge, idx) => (
+                <motion.div
+                  key={badge.title}
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: idx * 0.05 }}
+                  className="glass-card rounded-xl p-6 text-center"
+                >
+                  <badge.icon className={`w-8 h-8 ${badge.color} mx-auto mb-3`} />
+                  <h4 className="font-heading font-semibold text-sm text-zinc-200 mb-1.5">{badge.title}</h4>
+                  <p className="text-xs text-zinc-500 leading-relaxed">{badge.desc}</p>
+                </motion.div>
+              ))}
+            </div>
           </div>
-          <div className="flex flex-col items-center p-4">
-            <Zap className="w-8 h-8 text-purple-400 mb-2" />
-            <h4 className="font-heading font-semibold text-xs mb-1">
-              ATS Integrations
-            </h4>
-            <p className="text-[10px] text-zinc-500 leading-relaxed">
-              Instantly link generated profiles to Greenhouse, Lever, and Greenhouse HR portals.
-            </p>
-          </div>
-        </div>
+        </section>
       </main>
 
-      {/* Checkout simulated pop-up center */}
+      {/* Checkout Modal */}
       <AnimatePresence>
         {checkoutPlan && (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <motion.div
-              initial={{ opacity: 0, scale: 0.96, y: 10 }}
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.96, y: 10 }}
-              className={`${GLASSMORPHISM_STYLES.card} w-full max-w-sm p-6 border-zinc-800 shadow-2xl relative space-y-5 bg-zinc-950`}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              className="glass-card rounded-2xl w-full max-w-sm p-6 relative"
             >
-              {/* Header */}
-              <div className="text-center">
-                <div className="w-10 h-10 rounded-full bg-indigo-950 border border-indigo-900/30 flex items-center justify-center text-indigo-400 mx-auto mb-3">
-                  <CreditCard className="w-5 h-5" />
+              {/* Close */}
+              <button
+                onClick={() => { if (!paymentRunning) setCheckoutPlan(null); }}
+                className="absolute top-4 right-4 text-zinc-500 hover:text-zinc-300 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              <div className="text-center mb-5">
+                <div className="w-10 h-10 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mx-auto mb-3">
+                  <CreditCard className="w-5 h-5 text-indigo-400" />
                 </div>
-                <h3 className="font-heading font-extrabold text-white text-base">
-                  Simulated Billing Portal
+                <h3 className="font-heading font-bold text-base text-white">
+                  Complete Checkout
                 </h3>
-                <p className="text-[10px] text-zinc-500 mt-0.5">
-                  Secure checkout for {checkoutPlan.name}
+                <p className="text-xs text-zinc-500 mt-1">
+                  Secure payment for {checkoutPlan.name}
                 </p>
               </div>
 
-              {/* Status Section */}
               {paymentSuccess ? (
-                <div className="py-8 flex flex-col items-center justify-center space-y-3">
-                  <div className="w-10 h-10 rounded-full bg-emerald-950 border border-emerald-900/30 text-emerald-400 flex items-center justify-center shadow-lg shadow-emerald-900/10">
-                    <Check className="w-6 h-6" />
+                <div className="py-8 flex flex-col items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                    <Check className="w-6 h-6 text-emerald-400" />
                   </div>
-                  <div className="text-xs font-bold text-emerald-400">Payment Authorization Successful</div>
-                  <div className="text-[9px] text-zinc-500 text-center leading-normal">
-                    Database subscription tier upgraded. Synced cookies verified. Redirecting...
-                  </div>
+                  <div className="text-sm font-bold text-emerald-400">Payment Successful</div>
+                  <p className="text-xs text-zinc-500 text-center">
+                    Subscription tier upgraded. Redirecting to dashboard...
+                  </p>
                 </div>
               ) : (
                 <>
-                  <div className="bg-[#09090b]/80 border border-zinc-900 p-3.5 rounded-lg flex items-center justify-between text-xs">
+                  <div className="bg-white/[0.02] border border-white/[0.06] p-4 rounded-xl flex items-center justify-between mb-4">
                     <div>
-                      <div className="font-bold text-zinc-200">{checkoutPlan.name}</div>
-                      <div className="text-[9px] text-zinc-500 mt-0.5">Subscription active for 30 days</div>
+                      <div className="text-sm font-semibold text-zinc-200">{checkoutPlan.name}</div>
+                      <div className="text-[10px] text-zinc-500 mt-0.5">Monthly subscription</div>
                     </div>
                     <div className="text-right">
-                      <div className="font-black text-white text-sm">{checkoutPlan.price}</div>
-                      <div className="text-[9px] text-zinc-500">/ month</div>
+                      <div className="text-lg font-bold text-white">{checkoutPlan.price}</div>
+                      <div className="text-[10px] text-zinc-500">/ month</div>
                     </div>
                   </div>
 
-                  <div className="space-y-3 leading-relaxed">
-                    <div className="text-[9px] uppercase font-bold text-zinc-500 tracking-wider">
-                      Simulated Payment details
-                    </div>
-                    <div className="bg-[#09090b]/40 border border-zinc-900 p-2.5 rounded text-[10px] text-zinc-400 space-y-1">
+                  <div className="space-y-2 mb-5">
+                    <div className="text-[9px] uppercase font-bold text-zinc-500 tracking-wider">Payment Details</div>
+                    <div className="bg-white/[0.01] border border-white/[0.06] p-3 rounded-xl text-xs space-y-1.5">
                       <div className="flex justify-between">
-                        <span>Cardholder:</span>
-                        <span className="text-zinc-200">{user?.name || "Demo Candidate"}</span>
+                        <span className="text-zinc-500">Cardholder:</span>
+                        <span className="text-zinc-200">{user?.name || "Candidate"}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>Simulated Card:</span>
-                        <span className="text-zinc-200">•••• •••• •••• 4242</span>
+                        <span className="text-zinc-500">Card:</span>
+                        <span className="text-zinc-200">•••• 4242</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>Stripe Env Mode:</span>
-                        <span className="text-amber-400 font-bold">Dev Sandbox</span>
+                        <span className="text-zinc-500">Mode:</span>
+                        <span className="text-amber-400 font-semibold">Sandbox</span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex space-x-3 pt-2">
-                    <button
+                  <div className="flex gap-3">
+                    <Button
+                      variant="ghost"
                       onClick={() => setCheckoutPlan(null)}
                       disabled={paymentRunning}
-                      className="flex-1 bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-200 py-2 rounded-md text-xs font-semibold cursor-pointer"
+                      className="flex-1"
                     >
                       Cancel
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="primary"
                       onClick={executeSandboxPurchase}
-                      disabled={paymentRunning}
-                      className={`flex-1 ${INTERACTION_CLASSES.primaryButton} py-2 rounded-md text-xs font-semibold flex items-center justify-center`}
+                      loading={paymentRunning}
+                      className="flex-1"
                     >
-                      {paymentRunning ? (
-                        <>
-                          <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                          <span>Authorizing...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Lock className="w-3.5 h-3.5 mr-1.5" />
-                          <span>Pay {checkoutPlan.price}</span>
-                        </>
-                      )}
-                    </button>
+                      <Lock className="w-3.5 h-3.5" />
+                      Pay {checkoutPlan.price}
+                    </Button>
                   </div>
                 </>
               )}
 
-              {/* Secure lock footer */}
-              <div className="flex items-center justify-center space-x-1 text-[9px] text-zinc-600">
+              <div className="flex items-center justify-center gap-1 text-[10px] text-zinc-600 mt-4">
                 <Lock className="w-3 h-3" />
                 <span>PCI-DSS Compliant Encryption Sandbox</span>
               </div>
@@ -627,8 +614,11 @@ export default function PricingPage() {
         )}
       </AnimatePresence>
 
-      <footer className="mt-16 border-t border-zinc-950/80 pt-6 text-center text-[10px] text-zinc-600">
-        © 2026 InterviewMirror AI Platform. All Rights Reserved.
+      {/* Footer */}
+      <footer className="border-t border-white/[0.03] bg-[#0a0a0b]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center text-xs text-zinc-600">
+          &copy; 2026 InterviewMirror AI Platform. All Rights Reserved.
+        </div>
       </footer>
     </div>
   );
