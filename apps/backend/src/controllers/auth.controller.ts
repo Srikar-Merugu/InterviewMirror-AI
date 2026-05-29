@@ -790,29 +790,26 @@ export class AuthController {
           createdAt: new Date(),
           auditLogs: [],
           userSessions: [],
-          subscription: {
+          subscription: jwtTier ? {
             id: "jwt-fallback-sub",
             userId: req.user.id,
-            tier: jwtTier || "FREE",
+            tier: jwtTier,
             stripeCustomerId: null,
             stripeSubscriptionId: null,
             currentPeriodEnd: null,
             createdAt: new Date(),
             updatedAt: new Date(),
-          },
+          } : null,
         };
       }
+
+      const effectiveSubscription = user.subscription || null;
 
       res.status(200).json({
         success: true,
         data: {
           ...user,
-          subscription: user.subscription || {
-            tier: req.user.tier || "FREE",
-            currentPeriodEnd: null,
-            stripeCustomerId: null,
-            stripeSubscriptionId: null,
-          },
+          subscription: effectiveSubscription,
           interviewsUsed: interviewCount,
         },
       });

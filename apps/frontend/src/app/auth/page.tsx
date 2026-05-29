@@ -87,7 +87,12 @@ export default function AuthPage() {
             document.cookie = `refresh_token=${result.refreshToken}; path=/; max-age=604800; SameSite=Lax; Secure`;
           }
         }
-        router.push("/dashboard/home");
+        const userTier = result.data?.subscription?.tier;
+        if (!userTier) {
+          router.push("/onboarding/plan");
+        } else {
+          router.push("/dashboard/home");
+        }
       } else {
         setAuthMode("signin");
         setPassword("");

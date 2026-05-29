@@ -99,20 +99,24 @@ export default function DashboardLayout({
   };
 
   return (
-    <div className="min-h-screen flex text-zinc-100 relative bg-[#0a0a0b]">
+    <div
+      className="min-h-screen flex relative transition-colors duration-300"
+      style={{ color: "var(--color-text)", backgroundColor: "var(--color-bg)" }}
+    >
       {/* Ambient Background */}
       <div className="fixed inset-0 bg-[linear-gradient(to_right,#80808006_1px,transparent_1px),linear-gradient(to_bottom,#80808006_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none z-0" />
       <div className="fixed top-0 left-0 right-0 h-[600px] bg-gradient-to-b from-indigo-950/10 via-transparent to-transparent pointer-events-none z-0" />
 
       {/* Desktop Sidebar */}
       <aside
-        className={`hidden md:flex flex-col justify-between border-r border-white/[0.04] bg-[#0a0a0b]/80 backdrop-blur-2xl relative z-30 transition-all duration-300 ${
+        className={`hidden md:flex flex-col justify-between border-r relative z-30 transition-all duration-300 ${
           collapsed ? "w-[68px]" : "w-60"
         }`}
+        style={{ backgroundColor: "var(--color-sidebar)", borderColor: "var(--color-border)", backdropFilter: "blur(24px)" }}
       >
         <div className="flex flex-col">
           {/* Logo */}
-          <div className={`flex items-center py-5 border-b border-white/[0.04] ${collapsed ? "justify-center px-0" : "justify-between px-4"}`}>
+          <div className={`flex items-center py-5 ${collapsed ? "justify-center px-0" : "justify-between px-4"}`} style={{ borderColor: "var(--color-border)" }}>
             <Link
               href="/dashboard/home"
               className="flex items-center gap-3 overflow-hidden"
@@ -121,9 +125,7 @@ export default function DashboardLayout({
                 <Sparkles className="w-4 h-4 text-white" />
               </div>
               {!collapsed && (
-                <span className="font-heading font-bold text-sm text-white truncate">
-                  InterviewMirror
-                </span>
+                <span className="font-heading font-bold text-sm truncate" style={{ color: "var(--color-text)" }}>InterviewMirror</span>
               )}
             </Link>
 
@@ -149,11 +151,16 @@ export default function DashboardLayout({
                   href={link.href}
                   className={`flex items-center rounded-xl text-xs font-medium transition-all duration-200 relative ${
                     collapsed ? "justify-center p-2.5" : "p-2.5 gap-3"
-                  } ${
-                    isActive
-                      ? "bg-white/[0.06] text-white border border-white/[0.06]"
-                      : "text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.03] border border-transparent"
                   }`}
+                  style={{
+                    color: isActive ? "var(--color-text)" : "var(--color-text-muted)",
+                    backgroundColor: isActive ? "var(--color-nav-active)" : "transparent",
+                    borderColor: isActive ? "var(--color-border)" : "transparent",
+                    borderWidth: isActive ? "1px" : "1px",
+                    borderStyle: "solid",
+                  }}
+                  onMouseEnter={(e) => { if (!isActive) { e.currentTarget.style.backgroundColor = "var(--color-nav-hover)"; e.currentTarget.style.color = "var(--color-text)"; }}}
+                  onMouseLeave={(e) => { if (!isActive) { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = "var(--color-text-muted)"; }}}
                 >
                   {isActive && (
                     <motion.div
@@ -171,12 +178,15 @@ export default function DashboardLayout({
         </div>
 
         {/* Sidebar Footer */}
-        <div className="p-3 border-t border-white/[0.04] space-y-1">
+        <div className="p-3 space-y-1" style={{ borderColor: "var(--color-border)", borderTopWidth: "1px" }}>
           <button
             onClick={toggleTheme}
-            className={`w-full flex items-center rounded-xl text-xs text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.03] transition-all ${
+            className={`w-full flex items-center rounded-xl text-xs transition-all ${
               collapsed ? "justify-center p-2.5" : "p-2.5 gap-3"
             }`}
+            style={{ color: "var(--color-text-muted)" }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "var(--color-nav-hover)"; e.currentTarget.style.color = "var(--color-text)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = "var(--color-text-muted)"; }}
           >
             {theme === "dark" ? (
               <Sun className="w-4 h-4 text-amber-400" />
@@ -191,7 +201,10 @@ export default function DashboardLayout({
           {!collapsed && (
             <button
               onClick={() => setCollapsed(true)}
-              className="w-full flex items-center gap-3 p-2.5 rounded-xl text-xs text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.03] transition-all md:hidden"
+              className="w-full flex items-center gap-3 p-2.5 rounded-xl text-xs transition-all md:hidden"
+              style={{ color: "var(--color-text-muted)" }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "var(--color-nav-hover)"; e.currentTarget.style.color = "var(--color-text)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = "var(--color-text-muted)"; }}
             >
               <ChevronLeft className="w-4 h-4" />
               <span>Collapse</span>
@@ -201,7 +214,10 @@ export default function DashboardLayout({
           {collapsed && (
             <button
               onClick={() => setCollapsed(false)}
-              className="w-full flex items-center justify-center p-2.5 rounded-xl text-xs text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.03] transition-all"
+              className="w-full flex items-center justify-center p-2.5 rounded-xl text-xs transition-all"
+              style={{ color: "var(--color-text-muted)" }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "var(--color-nav-hover)"; e.currentTarget.style.color = "var(--color-text)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = "var(--color-text-muted)"; }}
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -209,9 +225,12 @@ export default function DashboardLayout({
 
           <button
             onClick={handleLogout}
-            className={`w-full flex items-center rounded-xl text-xs text-red-400/70 hover:text-red-400 hover:bg-red-500/5 transition-all ${
+            className={`w-full flex items-center rounded-xl text-xs transition-all ${
               collapsed ? "justify-center p-2.5" : "p-2.5 gap-3"
             }`}
+            style={{ color: "rgba(248,113,113,0.7)" }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "rgba(248,113,113,0.05)"; e.currentTarget.style.color = "#f87171"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = "rgba(248,113,113,0.7)"; }}
           >
             <LogOut className="w-4 h-4 flex-shrink-0" />
             {!collapsed && <span>Sign Out</span>}
@@ -222,15 +241,21 @@ export default function DashboardLayout({
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 relative z-20">
         {/* Top Header */}
-        <header className="sticky top-0 z-40 flex items-center justify-between px-4 sm:px-6 py-3 border-b border-white/[0.04] bg-[#0a0a0b]/60 backdrop-blur-xl">
+        <header
+          className="sticky top-0 z-40 flex items-center justify-between px-4 sm:px-6 py-3 border-b backdrop-blur-xl transition-colors duration-300"
+          style={{ backgroundColor: "var(--color-header)", borderColor: "var(--color-border)" }}
+        >
           <div className="flex items-center gap-4">
             <button
               onClick={() => setMobileOpen(true)}
-              className="text-zinc-500 hover:text-zinc-300 transition-colors md:hidden"
+              className="transition-colors md:hidden"
+              style={{ color: "var(--color-text-muted)" }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = "var(--color-text)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = "var(--color-text-muted)"; }}
             >
               <Menu className="w-5 h-5" />
             </button>
-            <div className="flex items-center gap-2 text-xs text-zinc-600 font-mono">
+            <div className="flex items-center gap-2 text-xs font-mono" style={{ color: "var(--color-text-muted)" }}>
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400/70" />
               {pathname.split("/").filter(Boolean).join(" / ") || "dashboard"}
             </div>
@@ -240,7 +265,10 @@ export default function DashboardLayout({
             <div className="relative">
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
-                className="relative p-2 rounded-xl text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.04] transition-all"
+                className="relative p-2 rounded-xl transition-all"
+                style={{ color: "var(--color-text-muted)" }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "var(--color-nav-hover)"; e.currentTarget.style.color = "var(--color-text)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = "var(--color-text-muted)"; }}
               >
                 <Bell className="w-4 h-4" />
                 <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-indigo-400 animate-ping-slow" />
@@ -253,19 +281,20 @@ export default function DashboardLayout({
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.96 }}
                     transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                    className="absolute right-0 top-10 w-72 p-4 rounded-2xl bg-[#0a0a0b]/95 backdrop-blur-2xl border border-white/[0.06] shadow-2xl z-50"
+                    className="absolute right-0 top-10 w-72 p-4 rounded-2xl backdrop-blur-2xl shadow-2xl z-50"
+                    style={{ backgroundColor: "var(--color-sidebar)", border: "1px solid var(--color-border)" }}
                   >
-                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-3">
+                    <h4 className="text-[10px] font-bold uppercase tracking-widest mb-3" style={{ color: "var(--color-text-muted)" }}>
                       Notifications
                     </h4>
                     <div className="space-y-3 max-h-[220px] overflow-y-auto">
-                      <div className="text-xs text-zinc-400 pb-3 border-b border-white/[0.04]">
-                        <span className="text-emerald-400 font-semibold">Session Complete</span>
-                        <p className="text-zinc-500 mt-0.5">AI feedback compiled for Technical Architect assessment.</p>
+                      <div className="text-xs pb-3" style={{ color: "var(--color-text-secondary)", borderBottom: "1px solid var(--color-border)" }}>
+                        <span className="font-semibold" style={{ color: "var(--color-text)" }}>Session Complete</span>
+                        <p className="mt-0.5" style={{ color: "var(--color-text-muted)" }}>AI feedback compiled for Technical Architect assessment.</p>
                       </div>
-                      <div className="text-xs text-zinc-400">
+                      <div className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
                         <span className="text-indigo-400 font-semibold">Plan Updated</span>
-                        <p className="text-zinc-500 mt-0.5">Subscription synced with current tier.</p>
+                        <p className="mt-0.5" style={{ color: "var(--color-text-muted)" }}>Subscription synced with current tier.</p>
                       </div>
                     </div>
                   </motion.div>
@@ -275,7 +304,10 @@ export default function DashboardLayout({
 
             <Link
               href="/dashboard/settings"
-              className="w-8 h-8 rounded-xl border border-white/[0.06] flex items-center justify-center bg-white/[0.03] text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.06] transition-all"
+              className="w-8 h-8 rounded-xl flex items-center justify-center transition-all"
+              style={{ border: "1px solid var(--color-border)", backgroundColor: "var(--color-nav-hover)", color: "var(--color-text-muted)" }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "var(--color-nav-active)"; e.currentTarget.style.color = "var(--color-text)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "var(--color-nav-hover)"; e.currentTarget.style.color = "var(--color-text-muted)"; }}
             >
               <User className="w-4 h-4" />
             </Link>
@@ -298,16 +330,20 @@ export default function DashboardLayout({
                 animate={{ x: 0 }}
                 exit={{ x: -300 }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className="fixed inset-y-0 left-0 w-64 bg-[#0a0a0b]/95 backdrop-blur-2xl border-r border-white/[0.04] z-50 md:hidden flex flex-col"
+                className="fixed inset-y-0 left-0 w-64 backdrop-blur-2xl border-r z-50 md:hidden flex flex-col"
+                style={{ backgroundColor: "var(--color-sidebar)", borderColor: "var(--color-border)" }}
               >
-                <div className="flex items-center justify-between p-4 border-b border-white/[0.04]">
-                  <span className="font-heading font-bold text-sm text-white flex items-center gap-2">
+                <div className="flex items-center justify-between p-4" style={{ borderBottom: "1px solid var(--color-border)" }}>
+                  <span className="font-heading font-bold text-sm flex items-center gap-2" style={{ color: "var(--color-text)" }}>
                     <Sparkles className="w-4 h-4 text-indigo-400" />
                     InterviewMirror
                   </span>
                   <button
                     onClick={() => setMobileOpen(false)}
-                    className="text-zinc-500 hover:text-zinc-300 transition-colors"
+                    className="transition-colors"
+                    style={{ color: "var(--color-text-muted)" }}
+                    onMouseEnter={(e) => { e.currentTarget.style.color = "var(--color-text)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.color = "var(--color-text-muted)"; }}
                   >
                     <X className="w-5 h-5" />
                   </button>
@@ -322,11 +358,14 @@ export default function DashboardLayout({
                         key={link.name}
                         href={link.href}
                         onClick={() => setMobileOpen(false)}
-                        className={`flex items-center gap-3 p-3 rounded-xl text-xs font-medium transition-all ${
-                          isActive
-                            ? "bg-white/[0.06] text-white border border-white/[0.06]"
-                            : "text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.03] border border-transparent"
-                        }`}
+                        className={`flex items-center gap-3 p-3 rounded-xl text-xs font-medium transition-all`}
+                        style={{
+                          color: isActive ? "var(--color-text)" : "var(--color-text-muted)",
+                          backgroundColor: isActive ? "var(--color-nav-active)" : "transparent",
+                          border: isActive ? "1px solid var(--color-border)" : "1px solid transparent",
+                        }}
+                        onMouseEnter={(e) => { if (!isActive) { e.currentTarget.style.backgroundColor = "var(--color-nav-hover)"; e.currentTarget.style.color = "var(--color-text)"; }}}
+                        onMouseLeave={(e) => { if (!isActive) { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = "var(--color-text-muted)"; }}}
                       >
                         <IconComponent className="w-4 h-4 flex-shrink-0" />
                         <span>{link.name}</span>
@@ -335,13 +374,16 @@ export default function DashboardLayout({
                   })}
                 </nav>
 
-                <div className="p-3 border-t border-white/[0.04] space-y-1">
+                <div className="p-3 space-y-1" style={{ borderTop: "1px solid var(--color-border)" }}>
                   <button
                     onClick={() => {
                       toggleTheme();
                       setMobileOpen(false);
                     }}
-                    className="w-full flex items-center gap-3 p-3 rounded-xl text-xs text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.03] transition-all"
+                    className="w-full flex items-center gap-3 p-3 rounded-xl text-xs transition-all"
+                    style={{ color: "var(--color-text-muted)" }}
+                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "var(--color-nav-hover)"; e.currentTarget.style.color = "var(--color-text)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = "var(--color-text-muted)"; }}
                   >
                     {theme === "dark" ? (
                       <Sun className="w-4 h-4 text-amber-400" />
@@ -356,7 +398,10 @@ export default function DashboardLayout({
                       handleLogout();
                       setMobileOpen(false);
                     }}
-                    className="w-full flex items-center gap-3 p-3 rounded-xl text-xs text-red-400/70 hover:text-red-400 hover:bg-red-500/5 transition-all"
+                    className="w-full flex items-center gap-3 p-3 rounded-xl text-xs transition-all"
+                    style={{ color: "rgba(248,113,113,0.7)" }}
+                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "rgba(248,113,113,0.05)"; e.currentTarget.style.color = "#f87171"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = "rgba(248,113,113,0.7)"; }}
                   >
                     <LogOut className="w-4 h-4" />
                     <span>Sign Out</span>
