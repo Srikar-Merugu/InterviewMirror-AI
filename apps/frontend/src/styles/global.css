@@ -222,6 +222,72 @@
   }
 }
 
+/* =============================================
+   LIGHT MODE OVERRIDES
+   The UI is dark-mode-first. These remap all
+   dark-theme classes to readable light values.
+   ============================================= */
+
+/* --- Text colors --- */
+html:not(.dark) .text-white,
+html:not(.dark) .text-zinc-50,
+html:not(.dark) .text-zinc-100,
+html:not(.dark) .text-zinc-200,
+html:not(.dark) .text-zinc-300 {
+  color: #18181b !important;
+}
+
+html:not(.dark) .text-zinc-400 {
+  color: #52525b !important;
+}
+
+html:not(.dark) .text-zinc-500 {
+  color: #71717a !important;
+}
+
+html:not(.dark) .text-zinc-600 {
+  color: #71717a !important;
+}
+
+/* --- Accent / semantic colors (400-level → 600-level on light) --- */
+html:not(.dark) .text-indigo-400 { color: #4f46e5 !important; }
+html:not(.dark) .text-emerald-400 { color: #059669 !important; }
+html:not(.dark) .text-red-400 { color: #dc2626 !important; }
+html:not(.dark) .text-amber-400 { color: #d97706 !important; }
+html:not(.dark) .text-purple-400 { color: #9333ea !important; }
+html:not(.dark) .text-blue-400 { color: #2563eb !important; }
+html:not(.dark) .text-indigo-300 { color: #6366f1 !important; }
+
+/* --- Backgrounds (remap dark surfaces to light) --- */
+html:not(.dark) [class*="bg-white/"],
+html:not(.dark) [class*="bg-zinc-900"],
+html:not(.dark) [class*="bg-zinc-950"] {
+  background: var(--color-surface) !important;
+}
+
+/* Arbitrary-value dark backgrounds (catches base + opacity variants like bg-[#0a0a0b]/80) */
+html:not(.dark) [class*="bg-[#0a0a0b]"] { background: var(--color-surface) !important; }
+
+html:not(.dark) [class*="bg-zinc-800"] {
+  background-color: rgba(0,0,0,0.04) !important;
+}
+
+html:not(.dark) [class*="bg-zinc-800/"] {
+  background-color: rgba(0,0,0,0.04) !important;
+}
+
+/* --- Borders --- */
+html:not(.dark) [class*="border-white/"],
+html:not(.dark) [class*="border-zinc-800"],
+html:not(.dark) [class*="border-zinc-900"] {
+  border-color: var(--color-border) !important;
+}
+
+/* --- Placeholder text --- */
+html:not(.dark) [class*="placeholder-zinc"]::placeholder {
+  color: #a1a1aa !important;
+}
+
 /* Animations */
 @keyframes glow {
   0% { opacity: 0.3; }
