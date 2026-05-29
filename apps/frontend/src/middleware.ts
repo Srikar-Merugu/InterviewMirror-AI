@@ -88,20 +88,8 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // ── Auth pages: redirect logged-in users to dashboard ───────────────────────
-  if (isAuthRoute) {
-    if (accessToken && !isTokenExpired(accessToken)) {
-      const payload = getTokenPayload(accessToken);
-      const tier = payload.tier;
-      // If logged in with no plan yet, let them through to onboarding
-      if (!tier) {
-        return NextResponse.next();
-      }
-      const redirectUrl = request.nextUrl.clone();
-      redirectUrl.pathname = "/dashboard/home";
-      return NextResponse.redirect(redirectUrl);
-    }
-  }
+  // ── Auth pages: always show login page (no auto-redirect) ──────────────────
+  // (intentionally empty — always let /auth pass through)
 
   return NextResponse.next();
 }
