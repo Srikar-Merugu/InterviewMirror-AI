@@ -17,7 +17,10 @@ const display = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "InterviewMirror AI — AI-Powered Interview Coaching Platform",
+  title: {
+    default: "InterviewMirror AI — AI-Powered Interview Coaching",
+    template: "%s | InterviewMirror AI",
+  },
   description:
     "Master every interview with real-time AI feedback on posture, eye contact, speech confidence, and behavioral responses. Silicon Valley-grade interview intelligence.",
   keywords: [
@@ -26,12 +29,38 @@ export const metadata: Metadata = {
     "behavioral training",
     "speech analytics",
     "posture tracking",
+    "interview preparation",
+    "career development",
   ],
+  authors: [{ name: "InterviewMirror AI" }],
+  creator: "InterviewMirror AI",
+  publisher: "InterviewMirror AI",
+  metadataBase: new URL("https://www.srikarmerugu.space"),
+  icons: {
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+    apple: [{ url: "/apple-touch-icon.svg", type: "image/svg+xml" }],
+  },
+  manifest: "/site.webmanifest",
   openGraph: {
     title: "InterviewMirror AI — AI-Powered Interview Coaching",
     description:
       "Master every interview with real-time AI feedback on posture, eye contact, and speech confidence.",
+    url: "https://www.srikarmerugu.space",
+    siteName: "InterviewMirror AI",
     type: "website",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "InterviewMirror AI — AI-Powered Interview Coaching",
+    description:
+      "Master every interview with real-time AI feedback on posture, eye contact, and speech confidence.",
+  },
+  robots: {
+    index: true,
+    follow: true,
   },
 };
 
@@ -45,6 +74,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)" />
+        <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="InterviewMirror AI" />
         <script
           dangerouslySetInnerHTML={{
             __html: `
