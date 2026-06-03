@@ -68,8 +68,8 @@ model Subscription {
   tier                 SubscriptionTier @default(FREE)
   stripeCustomerId     String?          @unique
   stripeSubscriptionId String?          @unique
-  cashfreeOrderId      String?          @unique
-  cashfreeSubscriptionId String?        @unique
+  cashfreeOrderId      String?
+  cashfreeSubscriptionId String?
   currentPeriodEnd     DateTime?
   lastResetAt          DateTime?
   createdAt            DateTime         @default(now())
