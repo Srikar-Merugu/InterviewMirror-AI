@@ -3,9 +3,10 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Sparkles, Shield, User, Mail, ArrowRight, Loader2, ChevronLeft } from "lucide-react";
+import { Shield, User, Mail, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { LogoIcon } from "@/components/ui/Logo";
 
 const presetAccounts = [
   { name: "Srikar Merugu", email: "srikar@interviewmirror.com", avatar: "SM" },
@@ -94,8 +95,8 @@ export default function GoogleOAuthPage() {
         className="glass-card rounded-2xl w-full max-w-md p-8 relative z-10 space-y-6"
       >
         <div className="text-center">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg mx-auto mb-4">
-            <Sparkles className="w-6 h-6 text-white" />
+          <div className="mx-auto mb-4">
+            <LogoIcon size="lg" glow />
           </div>
           <h2 className="font-heading font-bold text-xl text-white tracking-tight">
             Sign in with Google

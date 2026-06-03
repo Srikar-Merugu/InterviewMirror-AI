@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Sparkles,
   Camera,
   BarChart3,
   Settings,
@@ -20,6 +19,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import { Logo, LogoIcon } from "../../components/ui/Logo";
 import { getAuthHeaders } from "../../utils/auth";
 
 export default function DashboardLayout({
@@ -117,17 +117,11 @@ export default function DashboardLayout({
         <div className="flex flex-col">
           {/* Logo */}
           <div className={`flex items-center py-5 ${collapsed ? "justify-center px-0" : "justify-between px-4"}`} style={{ borderColor: "var(--color-border)" }}>
-            <Link
-              href="/dashboard/home"
-              className="flex items-center gap-3 overflow-hidden"
-            >
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-indigo-500/10">
-                <Sparkles className="w-4 h-4 text-white" />
-              </div>
-              {!collapsed && (
-                <span className="font-heading font-bold text-sm truncate" style={{ color: "var(--color-text)" }}>InterviewMirror</span>
-              )}
-            </Link>
+            {collapsed ? (
+              <LogoIcon size="sm" glow />
+            ) : (
+              <Logo variant="horizontal" size="sm" href="/dashboard/home" showText />
+            )}
 
             {!collapsed && (
               <button
@@ -334,10 +328,7 @@ export default function DashboardLayout({
                 style={{ backgroundColor: "var(--color-sidebar)", borderColor: "var(--color-border)" }}
               >
                 <div className="flex items-center justify-between p-4" style={{ borderBottom: "1px solid var(--color-border)" }}>
-                  <span className="font-heading font-bold text-sm flex items-center gap-2" style={{ color: "var(--color-text)" }}>
-                    <Sparkles className="w-4 h-4 text-indigo-400" />
-                    InterviewMirror
-                  </span>
+                  <Logo variant="horizontal" size="sm" href="/dashboard/home" showText glow={false} />
                   <button
                     onClick={() => setMobileOpen(false)}
                     className="transition-colors"

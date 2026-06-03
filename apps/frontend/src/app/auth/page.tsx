@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Sparkles,
   Mail,
   Lock,
   User,
@@ -13,11 +12,11 @@ import {
   EyeOff,
   Loader2,
   ArrowRight,
-  ChevronRight,
 } from "lucide-react";
 import { GLASSMORPHISM_STYLES } from "@interviewmirror/ui";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { Logo } from "@/components/ui/Logo";
 
 export default function AuthPage() {
   const router = useRouter();
@@ -118,22 +117,21 @@ export default function AuthPage() {
 
       {/* Left Panel */}
       <div className="hidden md:flex md:w-1/2 flex-col justify-between p-8 relative z-10 border-r border-white/[0.04]">
-        <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/10">
-            <Sparkles className="w-4 h-4 text-white" />
-          </div>
-          <span className="font-heading font-bold text-lg tracking-tight bg-gradient-to-r from-white via-zinc-200 to-zinc-400 bg-clip-text text-transparent">
-            InterviewMirror AI
-          </span>
-        </Link>
+        <Logo variant="horizontal" size="md" href="/" glow />
 
         <div className="max-w-md my-auto">
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center gap-2 bg-white/[0.03] border border-white/[0.06] text-indigo-300 px-3.5 py-1.5 rounded-full text-xs font-semibold mb-5"
+            className="inline-flex items-center gap-2 bg-white/[0.03] border border-white/[0.06] text-cyan-300 px-3.5 py-1.5 rounded-full text-xs font-semibold mb-5"
           >
-            <Sparkles className="w-3.5 h-3.5" />
+            <div className="w-3.5 h-3.5 rounded bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center">
+              <svg viewBox="0 0 12 12" fill="none" className="w-2 h-2">
+                <polygon points="6,2 9.5,7 2.5,7" fill="white" opacity="0.95" />
+                <polygon points="6,10 9.5,5 2.5,5" fill="white" opacity="0.35" />
+                <rect x="2.5" y="5.5" width="7" height="1" rx="0.5" fill="white" opacity="0.7" />
+              </svg>
+            </div>
             <span>AI-POWERED INTERVIEW COACHING</span>
           </motion.div>
 
@@ -166,12 +164,9 @@ export default function AuthPage() {
 
       {/* Right Panel - Form */}
       <div className="flex-1 flex flex-col justify-center items-center p-6 relative z-10">
-        <Link href="/" className="flex md:hidden items-center gap-2.5 mb-8">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
-            <Sparkles className="w-4 h-4 text-white" />
-          </div>
-          <span className="font-heading font-bold text-lg text-white">InterviewMirror AI</span>
-        </Link>
+        <div className="flex md:hidden mb-8">
+          <Logo variant="horizontal" size="md" href="/" glow />
+        </div>
 
         <motion.div
           initial={{ opacity: 0, scale: 0.97 }}

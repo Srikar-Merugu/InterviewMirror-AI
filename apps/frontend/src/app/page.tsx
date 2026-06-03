@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+import { Logo } from "@/components/ui/Logo";
 import {
   Sparkles,
   Camera,
@@ -620,14 +621,7 @@ export default function LandingPage() {
       <footer className="border-t border-white/[0.03] bg-[#0a0a0b]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/10">
-                <Sparkles className="w-3.5 h-3.5 text-white" />
-              </div>
-              <span className="font-heading font-bold text-sm text-zinc-400">
-                InterviewMirror AI
-              </span>
-            </div>
+            <Logo variant="horizontal" size="sm" href="/" showText glow={false} />
             <div className="flex items-center gap-6 text-xs text-zinc-600">
               <span className="hover:text-zinc-400 transition-colors cursor-pointer">Security Policy</span>
               <span className="hover:text-zinc-400 transition-colors cursor-pointer">Terms of Service</span>

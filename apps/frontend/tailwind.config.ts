@@ -96,6 +96,10 @@ const config: Config = {
           "linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%)",
         "premium-gradient-subtle":
           "linear-gradient(135deg, rgba(99,102,241,0.1) 0%, rgba(139,92,246,0.1) 50%, rgba(167,139,250,0.1) 100%)",
+        "brand-gradient":
+          "linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)",
+        "brand-gradient-subtle":
+          "linear-gradient(135deg, rgba(6,182,212,0.1) 0%, rgba(59,130,246,0.1) 100%)",
         "glass-gradient":
           "linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%)",
       },
@@ -107,6 +111,7 @@ const config: Config = {
         "premium-xl": "0 25px 50px -12px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05)",
         "glow-indigo": "0 0 20px rgba(99,102,241,0.15), 0 0 40px rgba(99,102,241,0.05)",
         "glow-violet": "0 0 20px rgba(139,92,246,0.15), 0 0 40px rgba(139,92,246,0.05)",
+        "glow-cyan": "0 0 20px rgba(6,182,212,0.15), 0 0 40px rgba(6,182,212,0.05)",
       },
       transitionTimingFunction: {
         "premium": "cubic-bezier(0.16, 1, 0.3, 1)",
