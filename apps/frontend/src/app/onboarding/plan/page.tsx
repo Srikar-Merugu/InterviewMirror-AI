@@ -108,6 +108,67 @@ export default function OnboardingPlanPage() {
     return process.env.NEXT_PUBLIC_API_URL || (isDev ? `http://${window.location.hostname}:5001` : "");
   })();
 
+  const loadCashfreeSdk = (): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      if ((window as any).Cashfree) { resolve(); return; }
+      const script = document.createElement("script");
+      script.src = "https://sdk.cashfree.com/js/v3/cashfree.js";
+      script.async = true;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error("Failed to load Cashfree SDK"));
+      document.head.appendChild(script);
+    });
+  };
+
+  const runCashfreeCheckout = async (tier: string): Promise<void> => {
+    const createRes = await fetch(`${apiBase}/api/v1/subscription/cashfree/create`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      credentials: "include",
+      body: JSON.stringify({ tier }),
+    });
+    if (!createRes.ok) {
+      const err = await createRes.json().catch(() => ({}));
+      throw new Error((err as any).error?.message || "Failed to create payment order");
+    }
+    const orderData = await createRes.json();
+
+    await loadCashfreeSdk();
+
+    const env = process.env.NEXT_PUBLIC_CASHFREE_ENV === "PRODUCTION" ? "production" : "sandbox";
+    const cashfree = new (window as any).Cashfree({ mode: env });
+
+    const paymentResult = await cashfree.checkout({
+      paymentSessionId: orderData.payment_session_id,
+      redirectTarget: "modal",
+    });
+
+    if (paymentResult.error) {
+      throw new Error(paymentResult.error.message || "Payment failed or was cancelled");
+    }
+
+    const verifyRes = await fetch(`${apiBase}/api/v1/subscription/cashfree/verify`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      credentials: "include",
+      body: JSON.stringify({ order_id: orderData.order_id }),
+    });
+    if (!verifyRes.ok) throw new Error("Payment verification failed");
+    const verifyData = await verifyRes.json();
+
+    if (verifyData.status !== "PAID") {
+      throw new Error("Payment not completed. Please try again.");
+    }
+
+    if (verifyData.accessToken) {
+      document.cookie = `access_token=${verifyData.accessToken}; path=/; max-age=900; SameSite=Lax; Secure`;
+      window.localStorage.setItem("mock_auth_token", verifyData.accessToken);
+    }
+    if (verifyData.refreshToken) {
+      document.cookie = `refresh_token=${verifyData.refreshToken}; path=/; max-age=604800; SameSite=Lax; Secure`;
+    }
+  };
+
   const activatePlan = useCallback(async (tier: string): Promise<void> => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000);
@@ -190,8 +251,14 @@ export default function OnboardingPlanPage() {
         if (data.url && data.mode === "stripe") {
           window.location.href = data.url;
         } else if (data.mode === "sandbox") {
-          setLoadingLabel("Completing activation...");
-          await activatePlan(mappedTier);
+          const cashfreeAppId = process.env.NEXT_PUBLIC_CASHFREE_APP_ID;
+          if (cashfreeAppId) {
+            setLoadingLabel("Opening secure checkout...");
+            await runCashfreeCheckout(mappedTier);
+          } else {
+            setLoadingLabel("Completing activation...");
+            await activatePlan(mappedTier);
+          }
           setToast({ type: "success", message: `${selected} Plan Activated Successfully` });
           setTimeout(() => { window.location.href = "/dashboard/home"; }, 800);
         } else {
@@ -345,7 +412,7 @@ export default function OnboardingPlanPage() {
           </Button>
 
           <p className="text-xs text-zinc-600">
-            Secure checkout powered by Stripe &bull; Cancel anytime
+            Secure checkout powered by Cashfree & Stripe &bull; Cancel anytime
           </p>
         </motion.div>
 

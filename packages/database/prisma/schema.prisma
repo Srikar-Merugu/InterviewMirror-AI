@@ -23,8 +23,16 @@ enum SessionStatus {
 
 enum SubscriptionTier {
   FREE
+  STARTER
   PRO
   ENTERPRISE
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
 }
 
 model User {
@@ -60,10 +68,13 @@ model Subscription {
   tier                 SubscriptionTier @default(FREE)
   stripeCustomerId     String?          @unique
   stripeSubscriptionId String?          @unique
+  cashfreeOrderId      String?          @unique
+  cashfreeSubscriptionId String?        @unique
   currentPeriodEnd     DateTime?
   lastResetAt          DateTime?
   createdAt            DateTime         @default(now())
   updatedAt            DateTime         @updatedAt
+  cashfreeOrders       CashfreeOrder[]
 }
 
 model InterviewSession {
@@ -222,12 +233,37 @@ model UsageTracking {
   @@unique([userId, month, year])
 }
 
+model CashfreeOrder {
+  id                  String           @id @default(auto()) @map("_id") @db.ObjectId
+  subscriptionId      String           @db.ObjectId
+  subscription        Subscription     @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  orderId             String           @unique
+  orderAmount         Float
+  orderCurrency       String           @default("INR")
+  orderStatus         PaymentStatus    @default(PENDING)
+  paymentSessionId    String?
+  paymentLink         String?
+  customerPhone       String?
+  paymentMethod       String?
+  cfPaymentId         String?
+  cfOrderId           String?
+  paymentGroup        String?
+  orderExpiryTime     DateTime?
+  settledAt           DateTime?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  @@index([orderStatus])
+}
+
 model BillingHistory {
   id              String           @id @default(auto()) @map("_id") @db.ObjectId
   userId          String           @db.ObjectId
   amount          Float
   tier            SubscriptionTier
   stripeInvoiceId String?
+  cashfreeOrderId String?
+  gateway         String           @default("stripe")
   billedAt        DateTime         @default(now())
   status          String
 

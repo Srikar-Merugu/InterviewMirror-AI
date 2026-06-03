@@ -104,7 +104,7 @@ var require_main = __commonJS({
     var fs = require("fs");
     var path = require("path");
     var os = require("os");
-    var crypto4 = require("crypto");
+    var crypto5 = require("crypto");
     var packageJson = require_package();
     var version = packageJson.version;
     var LINE = /(?:^|^)\s*(?:export\s+)?([\w.-]+)(?:\s*=\s*?|:\s+?)(\s*'(?:\\'|[^'])*'|\s*"(?:\\"|[^"])*"|\s*`(?:\\`|[^`])*`|[^#\r\n]+)?\s*(?:#.*)?(?:$|$)/mg;
@@ -323,7 +323,7 @@ var require_main = __commonJS({
       const authTag = ciphertext.subarray(-16);
       ciphertext = ciphertext.subarray(12, -16);
       try {
-        const aesgcm = crypto4.createDecipheriv("aes-256-gcm", key, nonce);
+        const aesgcm = crypto5.createDecipheriv("aes-256-gcm", key, nonce);
         aesgcm.setAuthTag(authTag);
         return `${aesgcm.update(ciphertext)}${aesgcm.final()}`;
       } catch (error) {
@@ -19125,14 +19125,14 @@ var require_etag = __commonJS({
   "node_modules/etag/index.js"(exports2, module2) {
     "use strict";
     module2.exports = etag;
-    var crypto4 = require("crypto");
+    var crypto5 = require("crypto");
     var Stats = require("fs").Stats;
     var toString = Object.prototype.toString;
     function entitytag(entity) {
       if (entity.length === 0) {
         return '"0-2jmj7l5rSw0yVb/vlWAYkK/YBwk"';
       }
-      var hash2 = crypto4.createHash("sha1").update(entity, "utf8").digest("base64").substring(0, 27);
+      var hash2 = crypto5.createHash("sha1").update(entity, "utf8").digest("base64").substring(0, 27);
       var len = typeof entity === "string" ? Buffer.byteLength(entity, "utf8") : entity.length;
       return '"' + len.toString(16) + "-" + hash2 + '"';
     }
@@ -22025,11 +22025,11 @@ var require_request = __commonJS({
 // node_modules/cookie-signature/index.js
 var require_cookie_signature = __commonJS({
   "node_modules/cookie-signature/index.js"(exports2) {
-    var crypto4 = require("crypto");
+    var crypto5 = require("crypto");
     exports2.sign = function(val, secret) {
       if ("string" !== typeof val) throw new TypeError("Cookie value must be provided as a string.");
       if (null == secret) throw new TypeError("Secret key must be provided.");
-      return val + "." + crypto4.createHmac("sha256", secret).update(val).digest("base64").replace(/\=+$/, "");
+      return val + "." + crypto5.createHmac("sha256", secret).update(val).digest("base64").replace(/\=+$/, "");
     };
     exports2.unsign = function(val, secret) {
       if ("string" !== typeof val) throw new TypeError("Signed cookie string must be provided.");
@@ -22038,7 +22038,7 @@ var require_cookie_signature = __commonJS({
       return sha1(mac) == sha1(val) ? str : false;
     };
     function sha1(str) {
-      return crypto4.createHash("sha1").update(str).digest("hex");
+      return crypto5.createHash("sha1").update(str).digest("hex");
     }
   }
 });
@@ -23285,11 +23285,11 @@ var require_lib3 = __commonJS({
 // node_modules/cookie-parser/node_modules/cookie-signature/index.js
 var require_cookie_signature2 = __commonJS({
   "node_modules/cookie-parser/node_modules/cookie-signature/index.js"(exports2) {
-    var crypto4 = require("crypto");
+    var crypto5 = require("crypto");
     exports2.sign = function(val, secret) {
       if ("string" != typeof val) throw new TypeError("Cookie value must be provided as a string.");
       if ("string" != typeof secret) throw new TypeError("Secret string must be provided.");
-      return val + "." + crypto4.createHmac("sha256", secret).update(val).digest("base64").replace(/\=+$/, "");
+      return val + "." + crypto5.createHmac("sha256", secret).update(val).digest("base64").replace(/\=+$/, "");
     };
     exports2.unsign = function(val, secret) {
       if ("string" != typeof val) throw new TypeError("Signed cookie string must be provided.");
@@ -23298,7 +23298,7 @@ var require_cookie_signature2 = __commonJS({
       return sha1(mac) == sha1(val) ? str : false;
     };
     function sha1(str) {
-      return crypto4.createHash("sha1").update(str).digest("hex");
+      return crypto5.createHash("sha1").update(str).digest("hex");
     }
   }
 });
@@ -34247,14 +34247,14 @@ var require_buffer_equal_constant_time = __commonJS({
 var require_jwa = __commonJS({
   "node_modules/jwa/index.js"(exports2, module2) {
     var Buffer3 = require_safe_buffer().Buffer;
-    var crypto4 = require("crypto");
+    var crypto5 = require("crypto");
     var formatEcdsa = require_ecdsa_sig_formatter();
     var util = require("util");
     var MSG_INVALID_ALGORITHM = '"%s" is not a valid algorithm.\n  Supported algorithms are:\n  "HS256", "HS384", "HS512", "RS256", "RS384", "RS512", "PS256", "PS384", "PS512", "ES256", "ES384", "ES512" and "none".';
     var MSG_INVALID_SECRET = "secret must be a string or buffer";
     var MSG_INVALID_VERIFIER_KEY = "key must be a string or a buffer";
     var MSG_INVALID_SIGNER_KEY = "key must be a string, a buffer or an object";
-    var supportsKeyObjects = typeof crypto4.createPublicKey === "function";
+    var supportsKeyObjects = typeof crypto5.createPublicKey === "function";
     if (supportsKeyObjects) {
       MSG_INVALID_VERIFIER_KEY += " or a KeyObject";
       MSG_INVALID_SECRET += "or a KeyObject";
@@ -34344,17 +34344,17 @@ var require_jwa = __commonJS({
       return function sign(thing, secret) {
         checkIsSecretKey(secret);
         thing = normalizeInput(thing);
-        var hmac = crypto4.createHmac("sha" + bits, secret);
+        var hmac = crypto5.createHmac("sha" + bits, secret);
         var sig = (hmac.update(thing), hmac.digest("base64"));
         return fromBase64(sig);
       };
     }
     var bufferEqual;
-    var timingSafeEqual2 = "timingSafeEqual" in crypto4 ? function timingSafeEqual3(a, b) {
+    var timingSafeEqual2 = "timingSafeEqual" in crypto5 ? function timingSafeEqual3(a, b) {
       if (a.byteLength !== b.byteLength) {
         return false;
       }
-      return crypto4.timingSafeEqual(a, b);
+      return crypto5.timingSafeEqual(a, b);
     } : function timingSafeEqual3(a, b) {
       if (!bufferEqual) {
         bufferEqual = require_buffer_equal_constant_time();
@@ -34371,7 +34371,7 @@ var require_jwa = __commonJS({
       return function sign(thing, privateKey) {
         checkIsPrivateKey(privateKey);
         thing = normalizeInput(thing);
-        var signer = crypto4.createSign("RSA-SHA" + bits);
+        var signer = crypto5.createSign("RSA-SHA" + bits);
         var sig = (signer.update(thing), signer.sign(privateKey, "base64"));
         return fromBase64(sig);
       };
@@ -34381,7 +34381,7 @@ var require_jwa = __commonJS({
         checkIsPublicKey(publicKey);
         thing = normalizeInput(thing);
         signature = toBase64(signature);
-        var verifier = crypto4.createVerify("RSA-SHA" + bits);
+        var verifier = crypto5.createVerify("RSA-SHA" + bits);
         verifier.update(thing);
         return verifier.verify(publicKey, signature, "base64");
       };
@@ -34390,11 +34390,11 @@ var require_jwa = __commonJS({
       return function sign(thing, privateKey) {
         checkIsPrivateKey(privateKey);
         thing = normalizeInput(thing);
-        var signer = crypto4.createSign("RSA-SHA" + bits);
+        var signer = crypto5.createSign("RSA-SHA" + bits);
         var sig = (signer.update(thing), signer.sign({
           key: privateKey,
-          padding: crypto4.constants.RSA_PKCS1_PSS_PADDING,
-          saltLength: crypto4.constants.RSA_PSS_SALTLEN_DIGEST
+          padding: crypto5.constants.RSA_PKCS1_PSS_PADDING,
+          saltLength: crypto5.constants.RSA_PSS_SALTLEN_DIGEST
         }, "base64"));
         return fromBase64(sig);
       };
@@ -34404,12 +34404,12 @@ var require_jwa = __commonJS({
         checkIsPublicKey(publicKey);
         thing = normalizeInput(thing);
         signature = toBase64(signature);
-        var verifier = crypto4.createVerify("RSA-SHA" + bits);
+        var verifier = crypto5.createVerify("RSA-SHA" + bits);
         verifier.update(thing);
         return verifier.verify({
           key: publicKey,
-          padding: crypto4.constants.RSA_PKCS1_PSS_PADDING,
-          saltLength: crypto4.constants.RSA_PSS_SALTLEN_DIGEST
+          padding: crypto5.constants.RSA_PKCS1_PSS_PADDING,
+          saltLength: crypto5.constants.RSA_PSS_SALTLEN_DIGEST
         }, signature, "base64");
       };
     }
@@ -60316,10 +60316,278 @@ var authRouter = router2;
 
 // apps/backend/src/routes/subscription.route.ts
 var import_express3 = __toESM(require_express2());
+
+// apps/backend/src/controllers/cashfree.controller.ts
+var import_crypto2 = __toESM(require("crypto"));
+var CASHFREE_APP_ID = process.env.CASHFREE_APP_ID || "";
+var CASHFREE_SECRET_KEY = process.env.CASHFREE_SECRET_KEY || "";
+var CASHFREE_ENV = process.env.CASHFREE_ENV || "SANDBOX";
+var CASHFREE_BASE_URL = CASHFREE_ENV === "PRODUCTION" ? "https://api.cashfree.com/pg" : "https://sandbox.cashfree.com/pg";
+var API_VERSION = "2023-08-01";
+var PLAN_PRICES = {
+  PRO: 1999,
+  ENTERPRISE: 4999
+};
+async function cashfreeApiRequest(method, path, body) {
+  const url = `${CASHFREE_BASE_URL}${path}`;
+  const headers = {
+    "x-api-id": CASHFREE_APP_ID,
+    "x-api-secret": CASHFREE_SECRET_KEY,
+    "x-api-version": API_VERSION,
+    "Content-Type": "application/json"
+  };
+  const res = await fetch(url, {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : void 0
+  });
+  if (!res.ok) {
+    const errorBody = await res.text();
+    logger.error(`Cashfree API error [${res.status}]: ${errorBody}`);
+    throw new Error(`Cashfree API returned ${res.status}: ${errorBody}`);
+  }
+  return res.json();
+}
+var CashfreeController = class {
+  static async createOrder(req, res, next) {
+    try {
+      const userPayload = req.user;
+      if (!userPayload) throw new BadRequestError("User is not authenticated");
+      const { tier, phone } = req.body;
+      if (!tier || !["PRO", "ENTERPRISE"].includes(tier)) {
+        throw new BadRequestError("Invalid or missing subscription tier");
+      }
+      const dbUser = await prisma.user.findUnique({ where: { id: userPayload.id } });
+      if (!dbUser) throw new NotFoundError("User not found");
+      const orderAmount = PLAN_PRICES[tier];
+      if (!orderAmount) throw new BadRequestError("Invalid plan tier");
+      const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+      const orderId = `CF_${dbUser.id.slice(-12)}_${Date.now()}`;
+      const orderPayload = {
+        order_id: orderId,
+        order_amount: orderAmount / 100,
+        order_currency: "INR",
+        customer_details: {
+          customer_id: dbUser.id,
+          customer_name: dbUser.name || "Customer",
+          customer_email: dbUser.email,
+          customer_phone: phone || "9999999999"
+        },
+        order_meta: {
+          return_url: `${frontendUrl}/api/cashfree/return?order_id={order_id}&tier=${tier}`,
+          notify_url: `${process.env.BACKEND_URL || "https://interview-mirror-ai-backend.vercel.app"}/api/v1/subscription/cashfree/webhook`
+        },
+        order_tags: {
+          userId: dbUser.id,
+          tier
+        }
+      };
+      const cashfreeRes = await cashfreeApiRequest("POST", "/orders", orderPayload);
+      logger.info(`Cashfree order created: ${orderId} for user ${dbUser.id}`);
+      let subscription = await prisma.subscription.findUnique({
+        where: { userId: dbUser.id }
+      });
+      if (!subscription) {
+        subscription = await prisma.subscription.create({
+          data: {
+            userId: dbUser.id,
+            tier: "FREE",
+            cashfreeOrderId: cashfreeRes.order_id || orderId
+          }
+        });
+      }
+      await prisma.cashfreeOrder.create({
+        data: {
+          subscriptionId: subscription.id,
+          orderId: cashfreeRes.order_id || orderId,
+          orderAmount: orderAmount / 100,
+          orderCurrency: "INR",
+          orderStatus: "PENDING",
+          paymentSessionId: cashfreeRes.payment_session_id,
+          paymentLink: cashfreeRes.payment_link,
+          customerPhone: phone || null,
+          orderExpiryTime: cashfreeRes.order_expiry_time ? new Date(cashfreeRes.order_expiry_time) : new Date(Date.now() + 30 * 60 * 1e3)
+        }
+      });
+      res.status(200).json({
+        success: true,
+        gateway: "cashfree",
+        payment_session_id: cashfreeRes.payment_session_id,
+        order_id: cashfreeRes.order_id || orderId,
+        order_amount: orderAmount / 100,
+        order_currency: "INR"
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+  static async verifyPayment(req, res, next) {
+    try {
+      const userPayload = req.user;
+      if (!userPayload) throw new BadRequestError("User is not authenticated");
+      const { order_id } = req.body;
+      if (!order_id) throw new BadRequestError("Missing order_id");
+      const cashfreeRes = await cashfreeApiRequest("GET", `/orders/${order_id}`);
+      const orderStatus = cashfreeRes.order_status;
+      if (orderStatus === "PAID") {
+        const order = await prisma.cashfreeOrder.findUnique({
+          where: { orderId: order_id },
+          include: { subscription: true }
+        });
+        if (!order) throw new NotFoundError("Order not found in database");
+        const tier = order.subscription.tier === "PRO" ? "PRO" : "ENTERPRISE";
+        const currentPeriodEnd = /* @__PURE__ */ new Date();
+        currentPeriodEnd.setMonth(currentPeriodEnd.getMonth() + 1);
+        await prisma.subscription.update({
+          where: { id: order.subscriptionId },
+          data: {
+            tier,
+            cashfreeOrderId: order_id,
+            currentPeriodEnd,
+            lastResetAt: /* @__PURE__ */ new Date()
+          }
+        });
+        await prisma.cashfreeOrder.update({
+          where: { orderId: order_id },
+          data: {
+            orderStatus: "PAID",
+            cfPaymentId: cashfreeRes.cf_order_id,
+            cfOrderId: cashfreeRes.cf_order_id,
+            settledAt: /* @__PURE__ */ new Date()
+          }
+        });
+        const priceMap = { FREE: 0, PRO: 19, ENTERPRISE: 49 };
+        await prisma.billingHistory.create({
+          data: {
+            userId: order.subscription.userId,
+            amount: priceMap[tier] || 0,
+            tier,
+            cashfreeOrderId: order_id,
+            gateway: "cashfree",
+            status: "PAID"
+          }
+        });
+        await prisma.auditLog.create({
+          data: {
+            userId: order.subscription.userId,
+            action: `CASHFREE_PAYMENT_COMPLETED_${tier}`
+          }
+        });
+        const dbUser = await prisma.user.findUnique({
+          where: { id: order.subscription.userId }
+        });
+        let accessToken;
+        let refreshToken;
+        if (dbUser) {
+          accessToken = generateAccessToken({
+            id: dbUser.id,
+            email: dbUser.email,
+            role: dbUser.role,
+            tier
+          });
+          refreshToken = generateRefreshToken({ id: dbUser.id });
+          setAuthCookies(res, accessToken, refreshToken);
+        }
+        res.status(200).json({
+          success: true,
+          status: "PAID",
+          tier,
+          accessToken,
+          refreshToken
+        });
+      } else {
+        res.status(200).json({
+          success: true,
+          status: orderStatus || "PENDING"
+        });
+      }
+    } catch (error) {
+      next(error);
+    }
+  }
+  static async handleWebhook(req, res, next) {
+    try {
+      const signature = req.headers["x-webhook-signature"];
+      const rawBody = req.rawBody || JSON.stringify(req.body);
+      if (signature && CASHFREE_SECRET_KEY) {
+        const computedSignature = import_crypto2.default.createHmac("sha256", CASHFREE_SECRET_KEY).update(rawBody).digest("base64");
+        if (computedSignature !== signature) {
+          logger.warn("Cashfree webhook signature mismatch");
+          res.status(400).json({ message: "Invalid signature" });
+          return;
+        }
+      }
+      const event = req.body;
+      logger.info(`Cashfree webhook event: ${event.type}`);
+      if (event.type === "PAYMENT_SUCCESS_WEBHOOK") {
+        const orderId = event.data?.order?.order_id;
+        const cfPaymentId = event.data?.payment?.cf_payment_id;
+        const paymentStatus = event.data?.payment?.payment_status;
+        const orderAmount = event.data?.order?.order_amount;
+        const tags = event.data?.order?.order_tags || {};
+        if (orderId && paymentStatus === "SUCCESS") {
+          const order = await prisma.cashfreeOrder.findUnique({
+            where: { orderId },
+            include: { subscription: { include: { user: true } } }
+          });
+          if (order && order.orderStatus !== "PAID") {
+            const tier = tags.tier || "PRO";
+            const currentPeriodEnd = /* @__PURE__ */ new Date();
+            currentPeriodEnd.setMonth(currentPeriodEnd.getMonth() + 1);
+            await prisma.subscription.update({
+              where: { id: order.subscriptionId },
+              data: {
+                tier,
+                currentPeriodEnd,
+                lastResetAt: /* @__PURE__ */ new Date()
+              }
+            });
+            await prisma.cashfreeOrder.update({
+              where: { orderId },
+              data: {
+                orderStatus: "PAID",
+                cfPaymentId: cfPaymentId || void 0,
+                cfOrderId: event.data?.order?.cf_order_id,
+                settledAt: /* @__PURE__ */ new Date()
+              }
+            });
+            const priceMap = { FREE: 0, PRO: 19, ENTERPRISE: 49 };
+            await prisma.billingHistory.create({
+              data: {
+                userId: order.subscription.userId,
+                amount: orderAmount ? Number(orderAmount) : priceMap[tier] || 0,
+                tier,
+                cashfreeOrderId: orderId,
+                gateway: "cashfree",
+                status: "PAID"
+              }
+            });
+            await prisma.auditLog.create({
+              data: {
+                userId: order.subscription.userId,
+                action: `CASHFREE_WEBHOOK_PAYMENT_SUCCESS_${tier}`
+              }
+            });
+            logger.info(`Cashfree webhook processed: order ${orderId} for user ${order.subscription.userId}`);
+          }
+        }
+      }
+      res.status(200).json({ received: true });
+    } catch (error) {
+      logger.error(`Cashfree webhook error: ${error.message}`);
+      res.status(200).json({ received: true });
+    }
+  }
+};
+
+// apps/backend/src/routes/subscription.route.ts
 var router3 = (0, import_express3.Router)();
 router3.post("/checkout", requireAuth, StripeController.createCheckoutSession);
 router3.post("/sandbox-upgrade", requireAuth, StripeController.executeSandboxUpgrade);
 router3.post("/webhook", StripeController.handleStripeWebhook);
+router3.post("/cashfree/create", requireAuth, CashfreeController.createOrder);
+router3.post("/cashfree/verify", requireAuth, CashfreeController.verifyPayment);
+router3.post("/cashfree/webhook", CashfreeController.handleWebhook);
 var subscriptionRouter = router3;
 
 // apps/backend/src/app.ts
