@@ -117,9 +117,27 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose }) =
           return;
         }
 
-        // Redirect to Cashfree hosted checkout
-        const checkoutUrl = `https://sandbox.cashfree.com/pg/view/sessions/${cfData.payment_session_id}`;
-        window.location.href = checkoutUrl;
+        // Use Cashfree checkout SDK to redirect to hosted page
+        try {
+          const script = document.createElement("script");
+          script.src = "https://sdk.cashfree.com/js/v3/cashfree.js";
+          script.async = true;
+          await new Promise<void>((resolve, reject) => {
+            script.onload = () => resolve();
+            script.onerror = () => reject(new Error("Failed to load SDK"));
+            document.head.appendChild(script);
+          });
+          const cashfree = (window as any).Cashfree({ mode: cfData.environment || "sandbox" });
+          const returnUrl = `${window.location.origin}/cashfree/return?order_id={order_id}&tier=${mappedTier}`;
+          cashfree.checkout({
+            paymentSessionId: cfData.payment_session_id,
+            returnUrl,
+          });
+          // checkout() handles the redirect — code below won't run until return
+        } catch (sdkErr: any) {
+          console.warn("Cashfree SDK failed, redirecting directly:", sdkErr);
+          window.location.href = `https://sandbox.cashfree.com/pg/view/sessions/${cfData.payment_session_id}`;
+        }
         return;
 
         // Verify payment

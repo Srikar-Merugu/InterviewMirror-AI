@@ -108,6 +108,18 @@ export default function OnboardingPlanPage() {
     return process.env.NEXT_PUBLIC_API_URL || (isDev ? `http://${window.location.hostname}:5001` : "");
   })();
 
+  const loadCashfreeSdk = (): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      if ((window as any).Cashfree) { resolve(); return; }
+      const script = document.createElement("script");
+      script.src = "https://sdk.cashfree.com/js/v3/cashfree.js";
+      script.async = true;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error("Failed to load Cashfree SDK"));
+      document.head.appendChild(script);
+    });
+  };
+
   const runCashfreeMockCheckout = async (tier: string): Promise<void> => {
     const createRes = await fetch(`${apiBase}/api/v1/subscription/cashfree/create`, {
       method: "POST",
@@ -123,8 +135,17 @@ export default function OnboardingPlanPage() {
     const isMock = orderData.gateway === "cashfree_mock";
 
     if (!isMock) {
-      const checkoutUrl = `https://sandbox.cashfree.com/pg/view/sessions/${orderData.payment_session_id}`;
-      window.location.href = checkoutUrl;
+      try {
+        await loadCashfreeSdk();
+        const cashfree = (window as any).Cashfree({ mode: orderData.environment || "sandbox" });
+        const returnUrl = `${window.location.origin}/cashfree/return?order_id={order_id}&tier=${tier}`;
+        cashfree.checkout({
+          paymentSessionId: orderData.payment_session_id,
+          returnUrl,
+        });
+      } catch (sdkErr: any) {
+        window.location.href = `https://sandbox.cashfree.com/pg/view/sessions/${orderData.payment_session_id}`;
+      }
       return;
     }
 
@@ -165,18 +186,6 @@ export default function OnboardingPlanPage() {
         document.cookie = `refresh_token=${verifyData.refreshToken}; path=/; max-age=604800; SameSite=Lax; Secure`;
       }
     }
-  };
-
-  const loadCashfreeSdk = (): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      if ((window as any).Cashfree) { resolve(); return; }
-      const script = document.createElement("script");
-      script.src = "https://sdk.cashfree.com/js/v3/cashfree.js";
-      script.async = true;
-      script.onload = () => resolve();
-      script.onerror = () => reject(new Error("Failed to load Cashfree SDK"));
-      document.head.appendChild(script);
-    });
   };
 
   const activatePlan = useCallback(async (tier: string): Promise<void> => {
