@@ -45,12 +45,16 @@ async function cashfreeApiRequest(
   body?: Record<string, unknown>,
 ): Promise<CashfreeApiResponse> {
   const url = `${CASHFREE_BASE_URL}${path}`;
-  const headers: Record<string, string> = {
-    "x-api-id": CASHFREE_APP_ID,
-    "x-api-secret": CASHFREE_SECRET_KEY,
-    "x-api-version": API_VERSION,
-    "Content-Type": "application/json",
-  };
+  const headers: Record<string, string> = {};  
+  if (CASHFREE_APP_ID.startsWith("TEST") || CASHFREE_APP_ID.startsWith("PROD")) {
+    headers["x-client-id"] = CASHFREE_APP_ID;
+    headers["x-client-secret"] = CASHFREE_SECRET_KEY;
+  } else {
+    headers["x-api-id"] = CASHFREE_APP_ID;
+    headers["x-api-secret"] = CASHFREE_SECRET_KEY;
+  }
+  headers["x-api-version"] = API_VERSION;
+  headers["Content-Type"] = "application/json";
 
   const res = await fetch(url, { method, headers, body: body ? JSON.stringify(body) : undefined });
 
