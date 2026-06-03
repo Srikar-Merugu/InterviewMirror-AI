@@ -17,6 +17,7 @@ router.post("/webhook", StripeController.handleStripeWebhook);
 // Cashfree payment gateway endpoints
 router.post("/cashfree/create", requireAuth, CashfreeController.createOrder);
 router.post("/cashfree/verify", requireAuth, CashfreeController.verifyPayment);
+router.post("/cashfree/mock-success", requireAuth, CashfreeController.mockPaymentSuccess);
 router.post("/cashfree/webhook", CashfreeController.handleWebhook);
 
 export const subscriptionRouter = router;

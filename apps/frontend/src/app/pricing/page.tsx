@@ -72,19 +72,16 @@ export default function PricingPage() {
     fetchUser();
   }, []);
 
-  const loadCashfreeSdk = (): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      if ((window as any).Cashfree) { resolve(); return; }
-      const script = document.createElement("script");
-      script.src = "https://sdk.cashfree.com/js/v3/cashfree.js";
-      script.async = true;
-      script.onload = () => resolve();
-      script.onerror = () => reject(new Error("Failed to load Cashfree SDK"));
-      document.head.appendChild(script);
-    });
+  const getApiBase = () => {
+    if (typeof window === "undefined") return "";
+    const isDev =
+      window.location.port === "3000" ||
+      window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1";
+    return process.env.NEXT_PUBLIC_API_URL || (isDev ? `http://${window.location.hostname}:5001` : "");
   };
 
-  const runCashfreeCheckout = async (tier: string): Promise<void> => {
+  const runCashfreeMockCheckout = async (tier: string): Promise<void> => {
     const createRes = await fetch(`${getApiBase()}/api/v1/subscription/cashfree/create`, {
       method: "POST",
       headers: getAuthHeaders(),
@@ -96,49 +93,71 @@ export default function PricingPage() {
       throw new Error((err as any).error?.message || "Failed to create payment order");
     }
     const orderData = await createRes.json();
+    const isMock = orderData.gateway === "cashfree_mock";
 
-    await loadCashfreeSdk();
-
-    const env = process.env.NEXT_PUBLIC_CASHFREE_ENV === "PRODUCTION" ? "production" : "sandbox";
-    const cashfree = new (window as any).Cashfree({ mode: env });
-
-    const paymentResult = await cashfree.checkout({
-      paymentSessionId: orderData.payment_session_id,
-      redirectTarget: "modal",
-    });
-
-    if (paymentResult.error) {
-      throw new Error(paymentResult.error.message || "Payment failed or was cancelled");
+    if (!isMock) {
+      try {
+        await loadCashfreeSdk();
+        const env = process.env.NEXT_PUBLIC_CASHFREE_ENV === "PRODUCTION" ? "production" : "sandbox";
+        const cashfree = new (window as any).Cashfree({ mode: env });
+        const paymentResult = await cashfree.checkout({
+          paymentSessionId: orderData.payment_session_id,
+          redirectTarget: "modal",
+        });
+        if (paymentResult.error) throw new Error(paymentResult.error.message || "Payment cancelled");
+      } catch (sdkErr: any) {
+        throw new Error(sdkErr.message || "Cashfree SDK unavailable");
+      }
     }
 
-    const verifyRes = await fetch(`${getApiBase()}/api/v1/subscription/cashfree/verify`, {
-      method: "POST",
-      headers: getAuthHeaders(),
-      credentials: "include",
-      body: JSON.stringify({ order_id: orderData.order_id }),
-    });
-    if (!verifyRes.ok) throw new Error("Payment verification failed");
-    const verifyData = await verifyRes.json();
-
-    if (verifyData.status !== "PAID") {
-      throw new Error("Payment not completed. Please try again.");
-    }
-
-    if (verifyData.accessToken) {
-      document.cookie = `access_token=${verifyData.accessToken}; path=/; max-age=900; SameSite=Lax`;
-    }
-    if (verifyData.refreshToken) {
-      document.cookie = `refresh_token=${verifyData.refreshToken}; path=/; max-age=604800; SameSite=Lax`;
+    if (isMock) {
+      const mockRes = await fetch(`${getApiBase()}/api/v1/subscription/cashfree/mock-success`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+        credentials: "include",
+        body: JSON.stringify({ order_id: orderData.order_id }),
+      });
+      if (!mockRes.ok) {
+        const err = await mockRes.json().catch(() => ({}));
+        throw new Error((err as any).error?.message || "Mock payment failed");
+      }
+      const mockData = await mockRes.json();
+      if (mockData.accessToken) {
+        document.cookie = `access_token=${mockData.accessToken}; path=/; max-age=900; SameSite=Lax`;
+        window.localStorage.setItem("mock_auth_token", mockData.accessToken);
+      }
+      if (mockData.refreshToken) {
+        document.cookie = `refresh_token=${mockData.refreshToken}; path=/; max-age=604800; SameSite=Lax`;
+      }
+    } else {
+      const verifyRes = await fetch(`${getApiBase()}/api/v1/subscription/cashfree/verify`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+        credentials: "include",
+        body: JSON.stringify({ order_id: orderData.order_id }),
+      });
+      if (!verifyRes.ok) throw new Error("Payment verification failed");
+      const verifyData = await verifyRes.json();
+      if (verifyData.status !== "PAID") throw new Error("Payment not completed");
+      if (verifyData.accessToken) {
+        document.cookie = `access_token=${verifyData.accessToken}; path=/; max-age=900; SameSite=Lax`;
+      }
+      if (verifyData.refreshToken) {
+        document.cookie = `refresh_token=${verifyData.refreshToken}; path=/; max-age=604800; SameSite=Lax`;
+      }
     }
   };
 
-  const getApiBase = () => {
-    if (typeof window === "undefined") return "";
-    const isDev =
-      window.location.port === "3000" ||
-      window.location.hostname === "localhost" ||
-      window.location.hostname === "127.0.0.1";
-    return process.env.NEXT_PUBLIC_API_URL || (isDev ? `http://${window.location.hostname}:5001` : "");
+  const loadCashfreeSdk = (): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      if ((window as any).Cashfree) { resolve(); return; }
+      const script = document.createElement("script");
+      script.src = "https://sdk.cashfree.com/js/v3/cashfree.js";
+      script.async = true;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error("Failed to load Cashfree SDK"));
+      document.head.appendChild(script);
+    });
   };
 
   const handleCheckoutAction = async (planKey: string) => {
@@ -153,29 +172,15 @@ export default function PricingPage() {
       setPaymentRunning(true);
       try {
         const apiBase = getApiBase();
-
         const response = await fetch(`${apiBase}/api/v1/subscription/sandbox-upgrade`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...getAuthHeaders(),
-          },
+          headers: { "Content-Type": "application/json", ...getAuthHeaders() },
           credentials: "include",
           body: JSON.stringify({ tier: "FREE" }),
         });
-
         const resJson = await response.json();
-        if (!response.ok || !resJson.success) {
-          throw new Error(resJson.message || "Failed to downgrade plan");
-        }
-
-        setUser((prev: any) => ({
-          ...prev,
-          subscription: {
-            ...prev?.subscription,
-            tier: "FREE",
-          },
-        }));
+        if (!response.ok || !resJson.success) throw new Error(resJson.message || "Failed to downgrade plan");
+        setUser((prev: any) => ({ ...prev, subscription: { ...prev?.subscription, tier: "FREE" } }));
         router.push("/dashboard/home");
       } catch (err: any) {
         alert(err.message || "Error changing plan.");
@@ -185,60 +190,42 @@ export default function PricingPage() {
       return;
     }
 
+    // Try Stripe first
     try {
       const apiBase = getApiBase();
-
       const response = await fetch(`${apiBase}/api/v1/subscription/checkout`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...getAuthHeaders(),
-        },
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         credentials: "include",
         body: JSON.stringify({ tier: targetTier }),
       });
-
       const resJson = await response.json();
-
-      if (response.ok && resJson.success) {
-        if (resJson.mode === "stripe" && resJson.url) {
-          window.location.href = resJson.url;
-          return;
-        }
+      if (response.ok && resJson.success && resJson.mode === "stripe" && resJson.url) {
+        window.location.href = resJson.url;
+        return;
       }
     } catch (err) {
-      console.warn("Stripe backend checkout route failed, falling back to simulated modal UI:", err);
+      console.warn("Stripe checkout failed:", err);
     }
 
-    const cashfreeAppId = process.env.NEXT_PUBLIC_CASHFREE_APP_ID;
-    if (cashfreeAppId) {
-      try {
-        setPaymentRunning(true);
-        await runCashfreeCheckout(targetTier);
-
-        setUser((prev: any) => ({
-          ...prev,
-          subscription: { ...prev?.subscription, tier: targetTier },
-        }));
-        setPaymentSuccess(true);
-        setTimeout(() => {
-          setPaymentSuccess(false);
-          router.push("/dashboard/home");
-        }, 2500);
-        return;
-      } catch (err: any) {
-        console.warn("Cashfree checkout failed, falling back to sandbox:", err);
-      } finally {
-        setPaymentRunning(false);
-      }
+    // Try Cashfree (mock or real)
+    try {
+      setPaymentRunning(true);
+      await runCashfreeMockCheckout(targetTier);
+      setUser((prev: any) => ({ ...prev, subscription: { ...prev?.subscription, tier: targetTier } }));
+      router.push("/dashboard/home");
+      return;
+    } catch (cfErr: any) {
+      console.warn("Cashfree failed, falling back to sandbox:", cfErr.message);
+    } finally {
+      setPaymentRunning(false);
     }
 
+    // Fallback: sandbox modal
     setCheckoutPlan({
       tier: targetTier,
-      name: planKey === "FREE" ? "Mock Sandbox" : planKey === "PRO" ? "Professional Candidate" : "Recruiter Enterprise",
-      price: billingCycle === "monthly"
-        ? (planKey === "PRO" ? "$19" : "$49")
-        : (planKey === "PRO" ? "$15" : "$39"),
+      name: planKey === "PRO" ? "Professional Candidate" : "Recruiter Enterprise",
+      price: billingCycle === "monthly" ? (planKey === "PRO" ? "$19" : "$49") : (planKey === "PRO" ? "$15" : "$39"),
     });
   };
 
@@ -649,7 +636,7 @@ export default function PricingPage() {
                   </div>
 
                   <div className="space-y-2 mb-5">
-                    <div className="text-[9px] uppercase font-bold text-zinc-500 tracking-wider">Payment Details</div>
+                    <div className="text-[9px] uppercase font-bold text-zinc-500 tracking-wider">Payment Details (Test Mode)</div>
                     <div className="bg-white/[0.01] border border-white/[0.06] p-3 rounded-xl text-xs space-y-1.5">
                       <div className="flex justify-between">
                         <span className="text-zinc-500">Cardholder:</span>
@@ -657,11 +644,19 @@ export default function PricingPage() {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-zinc-500">Card:</span>
-                        <span className="text-zinc-200">•••• 4242</span>
+                        <span className="text-zinc-200">4111 1111 1111 1111</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-zinc-500">Expiry:</span>
+                        <span className="text-zinc-200">12/28</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-zinc-500">CVV / OTP:</span>
+                        <span className="text-zinc-200">123 / 1234</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-zinc-500">Mode:</span>
-                        <span className="text-amber-400 font-semibold">Sandbox</span>
+                        <span className="text-amber-400 font-semibold">Cashfree Test</span>
                       </div>
                     </div>
                   </div>
