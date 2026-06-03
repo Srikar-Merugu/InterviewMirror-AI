@@ -60449,7 +60449,7 @@ var CashfreeController = class {
             customer_phone: phone || "9999999999"
           },
           order_meta: {
-            return_url: `${frontendUrl}/api/cashfree/return?order_id={order_id}&tier=${tier}`,
+            return_url: `${frontendUrl}/cashfree/return?order_id={order_id}&tier=${tier}`,
             notify_url: `${process.env.BACKEND_URL || "https://interview-mirror-ai-backend.vercel.app"}/api/v1/subscription/cashfree/webhook`
           },
           order_tags: { userId: dbUser.id, tier }

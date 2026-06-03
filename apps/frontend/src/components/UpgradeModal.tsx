@@ -117,37 +117,10 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose }) =
           return;
         }
 
-        // Real Cashfree flow
-        try {
-          const script = document.createElement("script");
-          script.src = "https://sdk.cashfree.com/js/v3/cashfree.js";
-          script.async = true;
-          await new Promise<void>((resolve, reject) => {
-            script.onload = () => resolve();
-            script.onerror = () => reject(new Error("Failed to load Cashfree SDK"));
-            document.head.appendChild(script);
-          });
-
-          const env = cfData.environment || "sandbox";
-          const cashfree = (window as any).Cashfree({ mode: env });
-          const paymentResult = await cashfree.checkout({
-            paymentSessionId: cfData.payment_session_id,
-            redirectTarget: "_modal",
-          });
-
-          if (paymentResult.error) {
-            throw new Error(paymentResult.error.message || "Payment failed or cancelled");
-          }
-        } catch (sdkErr: any) {
-          // SDK failed — fall back to mock checkout modal
-          setMockCheckout({
-            tier: targetPlan,
-            orderId: cfData.order_id,
-            amount: cfData.order_amount,
-          });
-          setLoadingPlan(null);
-          return;
-        }
+        // Redirect to Cashfree hosted checkout
+        const checkoutUrl = `https://sandbox.cashfree.com/pg/view/sessions/${cfData.payment_session_id}`;
+        window.location.href = checkoutUrl;
+        return;
 
         // Verify payment
         const verifyRes = await fetch(`${apiBaseUrl}/api/v1/subscription/cashfree/verify`, {

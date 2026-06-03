@@ -96,18 +96,10 @@ export default function PricingPage() {
     const isMock = orderData.gateway === "cashfree_mock";
 
     if (!isMock) {
-      try {
-        await loadCashfreeSdk();
-        const env = orderData.environment || "sandbox";
-        const cashfree = (window as any).Cashfree({ mode: env });
-        const paymentResult = await cashfree.checkout({
-          paymentSessionId: orderData.payment_session_id,
-          redirectTarget: "_modal",
-        });
-        if (paymentResult.error) throw new Error(paymentResult.error.message || "Payment cancelled");
-      } catch (sdkErr: any) {
-        throw new Error(sdkErr.message || "Cashfree SDK unavailable");
-      }
+      // Redirect to Cashfree hosted checkout
+      const checkoutUrl = `https://sandbox.cashfree.com/pg/view/sessions/${orderData.payment_session_id}`;
+      window.location.href = checkoutUrl;
+      return; // This line won't execute after redirect, but for mock flow below
     }
 
     if (isMock) {
