@@ -98,11 +98,11 @@ export default function PricingPage() {
     if (!isMock) {
       try {
         await loadCashfreeSdk();
-        const env = process.env.NEXT_PUBLIC_CASHFREE_ENV === "PRODUCTION" ? "production" : "sandbox";
-        const cashfree = new (window as any).Cashfree({ mode: env });
+        const env = orderData.environment || "sandbox";
+        const cashfree = (window as any).Cashfree({ mode: env });
         const paymentResult = await cashfree.checkout({
           paymentSessionId: orderData.payment_session_id,
-          redirectTarget: "modal",
+          redirectTarget: "_modal",
         });
         if (paymentResult.error) throw new Error(paymentResult.error.message || "Payment cancelled");
       } catch (sdkErr: any) {

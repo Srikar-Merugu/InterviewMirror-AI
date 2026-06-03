@@ -128,11 +128,11 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose }) =
             document.head.appendChild(script);
           });
 
-          const env = cfData.order_currency === "INR" ? "production" : "sandbox";
-          const cashfree = new (window as any).Cashfree({ mode: env });
+          const env = cfData.environment || "sandbox";
+          const cashfree = (window as any).Cashfree({ mode: env });
           const paymentResult = await cashfree.checkout({
             paymentSessionId: cfData.payment_session_id,
-            redirectTarget: "modal",
+            redirectTarget: "_modal",
           });
 
           if (paymentResult.error) {

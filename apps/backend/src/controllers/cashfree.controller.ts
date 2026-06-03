@@ -219,6 +219,7 @@ export class CashfreeController {
         order_id: cashfreeRes.order_id || orderId,
         order_amount: orderAmount / 100,
         order_currency: "INR",
+        environment: CASHFREE_ENV === "PRODUCTION" ? "production" : "sandbox",
       });
     } catch (error) {
       next(error);
